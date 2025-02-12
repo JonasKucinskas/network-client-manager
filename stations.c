@@ -1,20 +1,38 @@
 #include <gtk/gtk.h>
 #include <stdbool.h>
 #define BUFSIZE 64
+#define LINE_COUNT_PER_CLIENT 19
 
-static gchar* get_client_mac(GtkTextBuffer *buffer)
+static int get_client_count(GtkTextBuffer *buffer)
+{
+  gint line_count = gtk_text_buffer_get_line_count(buffer);
+
+  return line_count / LINE_COUNT_PER_CLIENT;
+}
+
+static char* get_client_macs(GtkTextBuffer *buffer, int *client_count)
 {
   GtkTextIter start_iter;
   GtkTextIter end_iter;
 
-  //mac address is between 8th and 25th chars in buffer at the first line.
-  gtk_text_buffer_get_iter_at_line_offset(buffer, &start_iter, 0, 8);
-  gtk_text_buffer_get_iter_at_line_offset(buffer, &end_iter, 0, 25);
-  
-  gchar *mac = gtk_text_buffer_get_text(buffer, &start_iter, &end_iter, FALSE);
-  return mac;
-}
+  //17 chars in a mac address
+  char *macs = malloc(17 * (*client_count) * sizeof(char));
+  gint line;
 
+  for (int i = 0; i < (*client_count); i++)
+  {
+    line = i * LINE_COUNT_PER_CLIENT;
+
+    //mac address is between 8th and 25th chars in buffer at the first line.
+    gtk_text_buffer_get_iter_at_line_offset(buffer, &start_iter, line, 8);
+    gtk_text_buffer_get_iter_at_line_offset(buffer, &end_iter, line, 25);
+  
+    macs[i] = gtk_text_buffer_get_text(buffer, &start_iter, &end_iter, FALSE);
+  }  
+
+  return macs;
+}
+/*
 static void dc_client(GtkButton *button, GtkTextBuffer *buffer)
 { 
   const gchar *mac = get_client_mac(buffer);
@@ -25,14 +43,14 @@ static void dc_client(GtkButton *button, GtkTextBuffer *buffer)
   FILE *fp = popen(cmd, "r");
   fclose(fp);
 }
-
+*/
+//iw dev wlan0 station get <MAC address>
 //iw dev wlan0 station del ca:1c:72:9e:79:d2
 static gboolean set_input(GtkTextBuffer *buffer)
 {
   char *cmd = "iw dev wlan0 station dump";
   char buf[BUFSIZE] = {0};
   FILE* fp;
-
 
   GtkTextIter end;
   GtkTextIter start;
@@ -61,7 +79,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   GtkWidget *window;
   GtkWidget *text_view;
   GtkWidget *grid;
-  GtkTextBuffer* buffer;
+  GtkTextBuffer *buffer;
 
   window = gtk_application_window_new (app);
   gtk_window_set_title(GTK_WINDOW (window), "Clients");
@@ -71,9 +89,32 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_container_add(GTK_CONTAINER (window), grid);
 
   buffer = gtk_text_buffer_new(NULL);
+  //initial buffer load
+  set_input(buffer);
+
+  //get client count
+  //pasiimti kiekvieno cliento mac,
+  //kiekvieno cliento mac paleisti 
+  //iw dev wlan0 station get <MAC address>.
+  //ideti kiekviena i nauja bufferi.
+
+
+
+  int *client_count;
+  //g_timeout_add(1000, (GSourceFunc)get_client_count, buffer, &client_count);
+  client_count = get_client_count(buffer);
+  
 
   //refresh client info
-  g_timeout_add(1000, (GSourceFunc)set_input, buffer);
+  //g_timeout_add(1000, (GSourceFunc)set_input, buffer);
+
+  char *macs = get_client_macs(buffer, client_count);
+
+  for (int i = 0; i < client_count; i++)
+  {
+    g_print(macs[i]);
+  }
+
 
   text_view = gtk_text_view_new_with_buffer(buffer);
   gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
@@ -85,7 +126,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   //set buttons
   //column 0, row 1, span 2 horizontaly, 1 verticaly
   GtkWidget *dc_button = gtk_button_new_with_label("Disconnect");
-  g_signal_connect(dc_button, "clicked", G_CALLBACK (dc_client), buffer);
+  //g_signal_connect(dc_button, "clicked", G_CALLBACK (dc_client), buffer);
   gtk_grid_attach(GTK_GRID(grid), dc_button, 0, 1, 2, 1);
 
   gtk_widget_show_all (window);
