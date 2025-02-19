@@ -43,30 +43,41 @@ static void set_client_macs()
   fclose(fp);
 }
 
-static void set_widgets(GtkTextBuffer *buffer, gchar* mac)
+static void remove_child(GtkWidget *widget, gpointer data) 
+{
+  GtkGrid *grid = GTK_GRID(data);
+  gtk_container_remove(GTK_CONTAINER(grid), widget); 
+}
+
+void clear_grid(GtkGrid *grid) 
+{
+    gtk_container_foreach(GTK_CONTAINER(grid), remove_child, grid);
+}
+
+static void set_widgets(GtkTextBuffer *buffer, int i)
 {
   GtkWidget *text_view = gtk_text_view_new_with_buffer(buffer);
   gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
     
   //2 horizontaly, 1 verticaly
-  gtk_grid_attach(GTK_GRID(grid), text_view, 0, (client_count - 1) * 2, 2, 1);
+  gtk_grid_attach(GTK_GRID(grid), text_view, 0, i * 2, 2, 1);
     
   //set button
   //column 0, row 1, span 2 horizontaly, 1 verticaly
   GtkWidget *dc_button = gtk_button_new_with_label("Disconnect");
-  g_signal_connect(dc_button, "clicked", G_CALLBACK (dc_client), mac);
-  gtk_grid_attach(GTK_GRID(grid), dc_button, 0, (client_count - 1) * 2 + 1, 2, 1);
+  g_signal_connect(dc_button, "clicked", G_CALLBACK (dc_client), macs[i]);
+  gtk_grid_attach(GTK_GRID(grid), dc_button, 0, i * 2 + 1, 2, 1);
 
   gtk_widget_show(text_view);
   gtk_widget_show(dc_button);
 }
 
-static void set_buffer(GtkTextBuffer* buffer, gchar *mac)
+static void set_buffer(GtkTextBuffer* buffer, int i)
 { 
   char cmd[] = "iw dev wlan0 station get ";
   char cmd_full[43] = {0};
   
-  snprintf(cmd_full, sizeof(cmd_full), "%s%s", cmd, mac);
+  snprintf(cmd_full, sizeof(cmd_full), "%s%s", cmd, macs[i]);
     
   GtkTextIter end;
   GtkTextIter start;
@@ -91,7 +102,9 @@ static void set_buffer(GtkTextBuffer* buffer, gchar *mac)
   fclose(fp);
 }
 
-static gboolean set_client_count(GtkTextBuffer **buffers)
+
+//pointeris roto i bufferiu pointerius
+static gboolean set_client_count(GtkTextBuffer ***buffers)
 {
   g_print(" entered ");
 
@@ -102,47 +115,40 @@ static gboolean set_client_count(GtkTextBuffer **buffers)
   fscanf(fp, "%d", &new_client_count);
   fclose(fp);
 
-
+  g_print(" entered 2 ");
   if (client_count != new_client_count)
   {
-    int client_count_local = client_count;
     client_count = new_client_count;
+    //clear grid
+    clear_grid(GTK_GRID(grid));
+    g_print("%d", client_count);
 
+    //
     set_client_macs();
+    g_print(" entered 4 ");
 
-    if (new_client_count < client_count_local)
+    *buffers = g_new(GtkTextBuffer*, client_count);
+    g_print(" entered 5 ");
+
+
+    for (int i = 0; i < client_count; i++) 
     {
-      //find unneeded buffer
-      //remove it
-      //remove unneeded widgets
-    } 
-    else if (new_client_count > client_count_local)
-    {
-      *buffers = g_realloc(*buffers, new_client_count * sizeof(GtkTextBuffer*));  
-      g_print("realloced");
-      if (*buffers == NULL) 
+      g_print("%d", i);
+      (*buffers)[i] = gtk_text_buffer_new(NULL);
+      g_print(" entered 6 ");
+      
+      if ((*buffers)[i] == NULL) 
       {
-        g_print("realloc failed\n");
-        return FALSE;
+        return FALSE;  
       }
 
-      for (int i = client_count_local; i < new_client_count; i++) 
-      {
-        buffers[i] = gtk_text_buffer_new(NULL);
-        
-        if (buffers[i] == NULL) 
-        {
-          g_print("failed to set buffer\n");
-          return FALSE;  
-        }
 
-        //set buffer
-        set_buffer(buffers[i], macs[i]);
-        set_widgets(buffers[i], macs[i]);
-      }
-      //draw one more widget
-      //get macs, if buffers dont contain mac
-      //draw new buffer
+      set_buffer((*buffers)[i], i);
+      g_print(" entered 7 ");
+
+      set_widgets((*buffers)[i], i);
+      g_print(" entered 8 ");
+
     }
   }
   else
@@ -150,10 +156,10 @@ static gboolean set_client_count(GtkTextBuffer **buffers)
     //client count didnt change,
     //update buffers
 
-    for (int i = 0; i < client_count; i++)
-    {
-      set_buffer(buffers[i], macs[i]);
-    }
+   // for (int i = 0; i < client_count; i++)
+   // {
+   //   set_buffer((*buffers)[i], i);
+   // }
   }
 
   return TRUE;
@@ -172,7 +178,7 @@ static void activate (GtkApplication *app, gpointer user_data)
 
   GtkTextBuffer **buffers = g_new(GtkTextBuffer*, client_count);
 
-  g_timeout_add(UPDATE_RATE, (GSourceFunc)set_client_count, buffers);
+  g_timeout_add(UPDATE_RATE, (GSourceFunc)set_client_count, &buffers);
   gtk_widget_show_all(window);
 }
 
