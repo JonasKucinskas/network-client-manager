@@ -1,7 +1,7 @@
 #include <gtk/gtk.h>
 #include <stdbool.h>
 
-#define BUFSIZE 64
+#define BUFSIZE 1
 #define UPDATE_RATE 1000
 
 GtkWidget *grid;
@@ -26,26 +26,19 @@ static void set_client_macs()
   char *cmd = "iw dev wlan0 station dump | grep 'Station' | awk '{print $2}'";
   FILE *fp = popen(cmd, "r");
   
-  if (macs != NULL) 
-  {
-    g_strfreev(macs);
-  }
-  
-  macs = g_new(gchar*, client_count);
-  
   size_t outlen = 0;
   char *out = NULL;
-  
-  for (int i = 0; i < client_count; i++) 
+  int count = 0;
+
+  while (getline(&out, &outlen, fp) != -1) 
   {
-    if (getline(&out, &outlen, fp) == -1) 
-    {
-      break;
-    }
-  
     out[strcspn(out, "\n")] = '\0';
-    macs[i] = g_strdup(out);
+
+    macs = g_realloc(macs, sizeof(gchar *) * (count + 2));
+    macs[count] = g_strdup(out);
+    count++;
   }
+  macs[count] = NULL;
 
   free(out);
   pclose(fp);
@@ -57,7 +50,7 @@ static void remove_child(GtkWidget *widget, gpointer data)
   gtk_container_remove(GTK_CONTAINER(grid), widget);
 }
 
-void clear_grid(GtkGrid *grid) 
+static void clear_grid(GtkGrid *grid) 
 {
   gtk_container_foreach(GTK_CONTAINER(grid), remove_child, grid);
 }
@@ -68,12 +61,11 @@ static void create_widgets(int i)
   text_views[i] = gtk_text_view_new_with_buffer(buffers[i]);
   
   gtk_text_view_set_editable(GTK_TEXT_VIEW(text_views[i]), FALSE);
-  gtk_grid_attach(GTK_GRID(grid), text_views[i], 0, i * 2, 2, 1);
+  gtk_grid_attach(GTK_GRID(grid), text_views[i], i, 0, 1, 1);
   
   dc_buttons[i] = gtk_button_new_with_label("Disconnect");
-  
   g_signal_connect(dc_buttons[i], "clicked", G_CALLBACK(dc_client), macs[i]);
-  gtk_grid_attach(GTK_GRID(grid), dc_buttons[i], 0, i * 2 + 1, 2, 1);
+  gtk_grid_attach(GTK_GRID(grid), dc_buttons[i], i, 1, 1, 1);
   gtk_widget_show_all(grid);
 }
 
@@ -100,6 +92,7 @@ static void update_buffer(int i)
   {
     gtk_text_buffer_insert(buffers[i], &end, buf, -1);
   }
+
   fclose(fp);
 }
 
