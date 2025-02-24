@@ -1,7 +1,7 @@
 #include <gtk/gtk.h>
 #include <stdbool.h>
 
-#define BUFSIZE 1
+#define BUFSIZE 36
 #define UPDATE_RATE 1000
 
 GtkWidget *grid;
@@ -160,7 +160,11 @@ static void activate(GtkApplication *app, gpointer user_data)
   gtk_window_maximize(GTK_WINDOW(window));
   
   grid = gtk_grid_new();
-  gtk_container_add(GTK_CONTAINER(window), grid);
+  
+  GtkWidget *notebook = gtk_notebook_new();
+  gtk_notebook_append_page(GTK_NOTEBOOK(notebook), GTK_WIDGET(grid), NULL);
+  
+  gtk_container_add(GTK_CONTAINER(window), notebook);
   
   g_timeout_add(UPDATE_RATE, (GSourceFunc)set_client_count, NULL);
   gtk_widget_show_all(window);
