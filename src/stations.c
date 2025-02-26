@@ -2,9 +2,8 @@
 #include <stdbool.h>
 
 #define BUFSIZE 36
-#define UPDATE_RATE 1000
 
-GtkWidget *grid;
+GtkWidget *client_grid;
 int client_count = 0;
 gchar **macs = NULL;
 GtkTextBuffer **buffers = NULL;
@@ -46,13 +45,13 @@ static void set_client_macs()
 
 static void remove_child(GtkWidget *widget, gpointer data) 
 {
-  GtkGrid *grid = GTK_GRID(data);
-  gtk_container_remove(GTK_CONTAINER(grid), widget);
+  GtkGrid *client_grid = GTK_GRID(data);
+  gtk_container_remove(GTK_CONTAINER(client_grid), widget);
 }
 
-static void clear_grid(GtkGrid *grid) 
+static void clear_grid(GtkGrid *client_grid) 
 {
-  gtk_container_foreach(GTK_CONTAINER(grid), remove_child, grid);
+  gtk_container_foreach(GTK_CONTAINER(client_grid), remove_child, client_grid);
 }
 
 static void create_widgets(int i) 
@@ -61,12 +60,12 @@ static void create_widgets(int i)
   text_views[i] = gtk_text_view_new_with_buffer(buffers[i]);
   
   gtk_text_view_set_editable(GTK_TEXT_VIEW(text_views[i]), FALSE);
-  gtk_grid_attach(GTK_GRID(grid), text_views[i], i, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(client_grid), text_views[i], i, 0, 1, 1);
   
   dc_buttons[i] = gtk_button_new_with_label("Disconnect");
   g_signal_connect(dc_buttons[i], "clicked", G_CALLBACK(dc_client), macs[i]);
-  gtk_grid_attach(GTK_GRID(grid), dc_buttons[i], i, 1, 1, 1);
-  gtk_widget_show_all(grid);
+  gtk_grid_attach(GTK_GRID(client_grid), dc_buttons[i], i, 1, 1, 1);
+  gtk_widget_show_all(client_grid);
 }
 
 static void update_buffer(int i) 
@@ -104,7 +103,7 @@ static void update_gui()
   }
 }
 
-static gboolean set_client_count(gpointer user_data) 
+gboolean set_client_count(gpointer user_data) 
 {
   char *cmd = "iw dev wlan0 station dump | grep 'Station' | wc -l";
   
@@ -132,7 +131,7 @@ static gboolean set_client_count(gpointer user_data)
       g_free(buffers);
       g_free(text_views);
       g_free(dc_buttons);
-      clear_grid(GTK_GRID(grid));
+      clear_grid(GTK_GRID(client_grid));
     }
 
     buffers = g_new0(GtkTextBuffer*, client_count);
@@ -148,38 +147,4 @@ static gboolean set_client_count(gpointer user_data)
   update_gui();
 
   return TRUE;
-}
-
-static void activate(GtkApplication *app, gpointer user_data) 
-{
-  GtkWidget *window;
-  
-  window = gtk_application_window_new(app);
-  
-  gtk_window_set_title(GTK_WINDOW(window), "Clients");
-  gtk_window_maximize(GTK_WINDOW(window));
-  
-  grid = gtk_grid_new();
-  
-  GtkWidget *notebook = gtk_notebook_new();
-  gtk_notebook_append_page(GTK_NOTEBOOK(notebook), GTK_WIDGET(grid), NULL);
-  
-  gtk_container_add(GTK_CONTAINER(window), notebook);
-  
-  g_timeout_add(UPDATE_RATE, (GSourceFunc)set_client_count, NULL);
-  gtk_widget_show_all(window);
-}
-
-int main(int argc, char **argv) 
-{
-  GtkApplication *app;
-  int status;
-  
-  app = gtk_application_new("org.gtk.example", G_APPLICATION_DEFAULT_FLAGS);
-  g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
-  
-  status = g_application_run(G_APPLICATION(app), argc, argv);
-  g_object_unref(app);
-  
-  return status;
 }
