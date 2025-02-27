@@ -26,7 +26,7 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page, guint page_
             client_update_id = 0;
         }
 
-        draw_expander();
+        draw_tree_view();
     }
 }
 
@@ -40,11 +40,12 @@ void activate(GtkApplication *app, gpointer user_data)
   gtk_window_maximize(GTK_WINDOW(window));
   
   client_grid = gtk_grid_new();
-  wan_grid = gtk_grid_new();
+  wan_view = gtk_tree_view_new ();
 
   GtkWidget *notebook = gtk_notebook_new();
   client_page = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), GTK_WIDGET(client_grid), gtk_label_new("Clients"));
-  wan_page = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), GTK_WIDGET(wan_grid), gtk_label_new("Wan"));
+  wan_page = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), GTK_WIDGET(wan_view), gtk_label_new("Wan"));
+
 
   g_signal_connect(notebook, "switch-page", G_CALLBACK(on_page_switched), NULL);
 

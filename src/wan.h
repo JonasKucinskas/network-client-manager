@@ -2,8 +2,8 @@
 #define WAN_H
 #include <gtk/gtk.h>
 
-extern GtkWidget *wan_grid;
+extern GtkWidget *wan_view;
 
-void draw_expander();
+void draw_tree_view();
 
 #endif
