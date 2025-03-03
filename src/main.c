@@ -1,6 +1,6 @@
 #include <gtk/gtk.h>
-#include "stations.h" 
-#include "wan.h" 
+#include "headers/stations.h" 
+#include "headers/wan.h" 
 
 #define UPDATE_RATE 1000
 
@@ -49,8 +49,10 @@ void activate(GtkApplication *app, gpointer user_data)
 
   g_signal_connect(notebook, "switch-page", G_CALLBACK(on_page_switched), NULL);
 
-  gtk_container_add(GTK_CONTAINER(window), notebook);
-  
+  GtkWidget *scroll_window = gtk_scrolled_window_new(NULL, NULL);
+  gtk_container_add(GTK_CONTAINER(window), scroll_window);
+  gtk_container_add(GTK_CONTAINER(scroll_window), notebook);
+
   gtk_widget_show_all(window);
 }
 
