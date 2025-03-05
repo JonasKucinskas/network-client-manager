@@ -2,14 +2,17 @@
 #include <curl/curl.h>
 #include <string.h>
 #include "headers/utils.h"
+
 #define BASE_URL "https://192.168.50.1/api/"
 
 //TODO change to bool in the future
-void api_save_auth_cookie(char *method, char* post_data)
+void api_save_auth_cookie()
 {
   CURL *curl;
   CURLcode res;
  
+  const char *post_data = "username=admin&password=Admin12345";
+
   curl_global_init(CURL_GLOBAL_DEFAULT);
  
   curl = curl_easy_init();
@@ -17,7 +20,7 @@ void api_save_auth_cookie(char *method, char* post_data)
   if(curl) 
   {
     char url[34] = BASE_URL;
-    strcat(url, method);
+    strcat(url, "login");//api/login call
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);

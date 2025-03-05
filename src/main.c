@@ -46,7 +46,6 @@ void activate(GtkApplication *app, gpointer user_data)
   client_page = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), GTK_WIDGET(client_grid), gtk_label_new("Clients"));
   wan_page = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), GTK_WIDGET(wan_view), gtk_label_new("Wan"));
 
-
   g_signal_connect(notebook, "switch-page", G_CALLBACK(on_page_switched), NULL);
 
   GtkWidget *scroll_window = gtk_scrolled_window_new(NULL, NULL);

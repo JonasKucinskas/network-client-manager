@@ -19,7 +19,7 @@ static GtkTreeModel* create_and_fill_model(void)
   GtkTreeStore *treestore;
   GtkTreeIter toplevel, child;
 
-  treestore = gtk_tree_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
+  treestore = gtk_tree_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING);
 
   char **methods = (char *[]){ "status.wan.connection", "info.firmware", "info.location", "config.ssid.profile"}; 
   
@@ -87,38 +87,53 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   GtkTreeModel *model = gtk_tree_view_get_model(tree_view);
   GtkTreeIter iter;
   
-  if (gtk_tree_model_get_iter(model, &iter, path)) 
+  gboolean got_iter = gtk_tree_model_get_iter(model, &iter, path);
+
+  if (!got_iter) 
   {
-    gchar *method_name;
+    return;
+  }
     
-    struct MemoryStruct chunk;
+  GtkTreeIter parent;
+  gboolean has_parent = gtk_tree_model_iter_parent(model, &parent, &iter);
+  
+  if (has_parent)
+  {
+    //user cliked on nested line which is not an api method.
+    return;
+  }
 
-    chunk.memory = malloc(1);  
-    chunk.size = 0;
+  gchar *method_name;
+  
+  gtk_tree_model_get(model, &iter, COL_METHOD, &method_name, -1);
+  g_print("Row activated: %s\n", method_name);
+  
+  //TODO login once
+  api_save_auth_cookie();
 
-    gtk_tree_model_get(model, &iter, COL_METHOD, &method_name, -1);
-    g_print("Row activated: %s %s\n", method_name);
-    
-    char *data = "username=admin&password=Admin12345";
-    
-    //TODO login once
-    api_save_auth_cookie("login", data);
-    api_call(&chunk, method_name, NULL);
-    
-    JsonParser *parser = json_parser_new();
-    JsonNode *root;
-    GError *error = NULL;
+  struct MemoryStruct chunk;
+  chunk.memory = malloc(1);  
+  chunk.size = 0;
 
-    json_parser_load_from_data(parser, chunk.memory, chunk.size, &error);
+  api_call(&chunk, method_name, NULL);
+  
+  JsonParser *parser = json_parser_new();
+  GError *error = NULL;
 
-    if (error)
-    {
-      g_print ("Unable to parse: %s\n", error->message);
-      g_error_free (error);
-      g_object_unref (parser);
-      return;
-    }
- 
+  json_parser_load_from_data(parser, chunk.memory, chunk.size, &error);
+  
+  if (error)
+  {
+    g_print ("Unable to parse: %s\n", error->message);
+    g_error_free (error);
+    g_object_unref (parser);
+    return;
+  }
+
+  JsonNode *root = json_parser_get_root(parser);
+  traverse_json(root, GTK_TREE_STORE(model), &iter);
+  
+    /*
     JsonReader *reader = json_reader_new (json_parser_get_root (parser));
     char** members = json_reader_list_members(reader);
 
@@ -127,7 +142,7 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
     {
       char *m = members[i];
       
-      json_reader_read_member (reader, members[i]);
+      json_reader_read_member (reader, m);
       const char *value = json_reader_get_string_value (reader);
       json_reader_end_member (reader);
       
@@ -157,14 +172,11 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
       }
       i++;
     }
-
     g_strfreev(members);
+
     g_object_unref (reader);
     g_object_unref (parser);
-
-    gtk_tree_store_append(GTK_TREE_STORE(model), &iter, &iter);
-    gtk_tree_store_set(GTK_TREE_STORE(model), &iter, COL_METHOD, "", COL_VALUE, chunk.memory, -1);
-  }
+    */
 }
 
 void draw_tree_view()
