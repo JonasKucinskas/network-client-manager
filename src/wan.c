@@ -21,22 +21,40 @@ static GtkTreeModel* create_and_fill_model(void)
 
   treestore = gtk_tree_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING);
 
-  char **methods = (char *[]){ "status.wan.connection", "info.firmware", "info.location", "config.ssid.profile"}; 
-  
-  for(int i = 0; i < 4; i++)
+  char **methods = (char *[])
+  { 
+    "auth.client",
+    "auth.client.token",
+    "cmd.carrier.scan",
+    "cmd.mesh.discover.result",
+    "cmd.mesh.discover",
+    "cmd.sms.get",
+    "cmd.ap",
+    "cmd.wifi.result",
+    "cmd.wifi.scan",
+    "config.mesh",
+    "config.speedfusionConnectProtect",
+    "config.ssid.profile",
+    "config.wan.connection",
+    "info.firmware",
+    "info.location",
+    "info.time",
+    "status.extap.mesh",
+    "status.extap.mesh.link",
+    "status.gpio.input",
+    "status.gpio.output",
+    "status.lan.profile",
+    "status.pepvpn",
+    "status.wan.connection",
+    "status.wan.connection.allowance",
+    NULL
+    }; 
+
+
+  for(int i = 0; i < method_count(methods); i++)
   {
     gtk_tree_store_append(treestore, &toplevel, NULL);
     gtk_tree_store_set(treestore, &toplevel, COL_METHOD, methods[i], COL_VALUE, "", -1);
-
-    //loop for nested structure, append as child
-    /*
-    gtk_tree_store_append(treestore, &child, &toplevel);
-    gtk_tree_store_set(treestore, &child,
-                     COL_FIRST_NAME, "Janinita",
-                     COL_LAST_NAME, "Average",
-                     COL_YEAR_BORN, (guint) 1985,
-                     -1);
-    */
   }
   return GTK_TREE_MODEL(treestore);
 }
@@ -107,22 +125,19 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   
   gtk_tree_model_get(model, &iter, COL_METHOD, &method_name, -1);
   g_print("Row activated: %s\n", method_name);
-  
-  //TODO login once
-  api_save_auth_cookie();
+
+  JsonParser *parser = json_parser_new();
+  GError *error = NULL;
 
   struct MemoryStruct chunk;
   chunk.memory = malloc(1);  
   chunk.size = 0;
 
   api_call(&chunk, method_name, NULL);
-  
-  JsonParser *parser = json_parser_new();
-  GError *error = NULL;
 
   json_parser_load_from_data(parser, chunk.memory, chunk.size, &error);
-  
-  if (error)
+
+  if(error)
   {
     g_print ("Unable to parse: %s\n", error->message);
     g_error_free (error);
@@ -131,52 +146,17 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   }
 
   JsonNode *root = json_parser_get_root(parser);
-  traverse_json(root, GTK_TREE_STORE(model), &iter);
+
+  //api returns code 200 always, so I have to parse json for actual error messages :(((
+  gboolean json_error = json_error_parse(root);
+
+  if(json_error)
+  {
+    g_print("api returned error");
+    return;
+  }
   
-    /*
-    JsonReader *reader = json_reader_new (json_parser_get_root (parser));
-    char** members = json_reader_list_members(reader);
-
-    int i = 0;
-    while (members[i] != 0) 
-    {
-      char *m = members[i];
-      
-      json_reader_read_member (reader, m);
-      const char *value = json_reader_get_string_value (reader);
-      json_reader_end_member (reader);
-      
-      if (m == "message") 
-      {
-        alert_popup(value);
-        //g_print("parse member %s\n", members[i]);
-        //g_print("parse value %s\n", value);
-        if (value == "Unauthorized")
-        {
-        }
-      }
-
-      if(m == "stat")
-      {
-        if (value == "fail")
-        {
-        }
-      }
-
-      if(m == "code")
-      {
-        if (value == "401")
-        {
-          //no auth
-        }
-      }
-      i++;
-    }
-    g_strfreev(members);
-
-    g_object_unref (reader);
-    g_object_unref (parser);
-    */
+  traverse_json(root, GTK_TREE_STORE(model), &iter);
 }
 
 void draw_tree_view()

@@ -2,6 +2,6 @@
 #define WIDGETS_H
 #include <gtk/gtk.h>
 
-void alert_popup(const char *message);
+void alert_popup(const char *header, const char *body);
 
 #endif
