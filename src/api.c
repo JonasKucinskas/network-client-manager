@@ -2,11 +2,11 @@
 #include <curl/curl.h>
 #include <string.h>
 #include "headers/utils.h"
+#include "headers/widgets.h"
 
 #define BASE_URL "https://192.168.50.1/api/"
 
-//TODO change to bool in the future
-void api_save_auth_cookie()
+gboolean api_save_auth_cookie()
 {
   CURL *curl;
   CURLcode res;
@@ -37,16 +37,19 @@ void api_save_auth_cookie()
     {
       fprintf(stderr, "curl_easy_perform() failed: %s\n",
       curl_easy_strerror(res));
+      curl_easy_cleanup(curl);
+      curl_global_cleanup();
+      return FALSE;
     }
 
     curl_easy_cleanup(curl);
   }
  
   curl_global_cleanup();
+  return TRUE;
 }
 
-
-//TODO: CHECK IF COOKIE EXISTS
+//TODO check if unauthorized response
 void api_call(struct MemoryStruct *chunk, char *method, char *post_data)
 {
   CURL *curl;
