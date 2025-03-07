@@ -82,18 +82,6 @@ void api_call(struct MemoryStruct *chunk, char *method, char *post_data)
     
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)chunk);
 
-    //check if cookie exists.
-    if (access("cookies", F_OK) != 0) 
-    {
-      gboolean saved_cookie = api_save_auth_cookie();
-
-      if (saved_cookie == FALSE)
-      {
-        g_printerr("%s", "failed to save auth cookie");
-        return;
-      }
-    } 
-
     //read cookie from "cookies" file
     curl_easy_setopt(curl, CURLOPT_COOKIEFILE, "cookies");
     res = curl_easy_perform(curl);

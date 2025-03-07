@@ -28,7 +28,8 @@ size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *user
   return realsize;
 }
 
-void traverse_json(JsonNode *node, GtkTreeStore *treestore, GtkTreeIter *iter) 
+//appends json structure to existing tree
+void json_tree_draw(JsonNode *node, GtkTreeStore *treestore, GtkTreeIter *iter) 
 {
   GtkTreeIter child;
   switch (json_node_get_node_type(node)) 
@@ -47,7 +48,7 @@ void traverse_json(JsonNode *node, GtkTreeStore *treestore, GtkTreeIter *iter)
         //0th column, obj name value:
         gtk_tree_store_set(treestore, &child, 0, key, -1);
         
-        traverse_json(value, treestore, &child);
+        json_tree_draw(value, treestore, &child);
       }
 
       g_list_free(members);
@@ -72,7 +73,7 @@ void traverse_json(JsonNode *node, GtkTreeStore *treestore, GtkTreeIter *iter)
 
         g_value_unset(&gvalue);
         g_free(strVal);
-        traverse_json(arrayElement, treestore, iter);
+        json_tree_draw(arrayElement, treestore, iter);
       }
       break;
     }
@@ -138,9 +139,14 @@ gboolean json_error_parse(JsonNode *root)
 
     if(strcmp(value, "\"Unauthorized\"") == 0)
     {
-      //writes new cookie if this cookie is wrong.
-      //if cookie does not exist, it is created in api_call()
-      api_save_auth_cookie();
+      //writes new cookie if current cookie is wrong or does not exist
+      gboolean saved_cookie = api_save_auth_cookie();
+
+      if (saved_cookie == FALSE)
+      {
+        alert_popup("Authorization failed", "Failed to save cookie.");
+        return TRUE;
+      }
       alert_popup(value, "Authorization failed, re-authorized.");
     }
     else if(strcmp(value, "\"unknown function\"") == 0)
@@ -157,4 +163,16 @@ gboolean json_error_parse(JsonNode *root)
   
   g_free(value);
   return FALSE;
+}
+
+void toggle_row_expansion(GtkTreeView *tree_view, GtkTreePath *path, gboolean expand, gboolean expand_all) 
+{
+  if (expand) 
+  {
+      gtk_tree_view_expand_row(tree_view, path, expand_all);
+  } 
+  else 
+  {
+      gtk_tree_view_collapse_row(tree_view, path);
+  }
 }

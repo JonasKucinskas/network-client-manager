@@ -112,14 +112,27 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
     return;
   }
     
-  GtkTreeIter parent;
+  GtkTreeIter parent, child;
   gboolean has_parent = gtk_tree_model_iter_parent(model, &parent, &iter);
-  
+  gboolean has_children = gtk_tree_model_iter_children(model, &child, &iter);
+  gboolean is_expanded = gtk_tree_view_row_expanded(tree_view, path);
+
   if (has_parent)
   {
     //user cliked on nested line which is not an api method.
+    //expand/collapse that row
+    toggle_row_expansion(tree_view, path, !is_expanded, FALSE); 
     return;
   }
+  
+  if (has_children)
+  {
+    //if used clicked on api method row and it already has data filled in, 
+    //expand/collapse that row
+    toggle_row_expansion(tree_view, path, !is_expanded, TRUE); 
+    return;
+  }
+
 
   gchar *method_name;
   
@@ -136,27 +149,39 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   api_call(&chunk, method_name, NULL);
 
   json_parser_load_from_data(parser, chunk.memory, chunk.size, &error);
-
+  
+  free(chunk.memory);
+  
   if(error)
   {
-    g_print ("Unable to parse: %s\n", error->message);
-    g_error_free (error);
-    g_object_unref (parser);
+    g_print("Unable to parse: %s\n", error->message);
+        
+    g_error_free(error);
+    g_object_unref(parser);
+    g_free(method_name);
     return;
   }
-
   JsonNode *root = json_parser_get_root(parser);
 
   //api returns code 200 always, so I have to parse json for actual error messages :(((
   gboolean json_error = json_error_parse(root);
-
+  
   if(json_error)
   {
     g_print("api returned error");
+    json_node_free(root); 
+    g_free(method_name); 
     return;
   }
   
-  traverse_json(root, GTK_TREE_STORE(model), &iter);
+  json_tree_draw(root, GTK_TREE_STORE(model), &iter);
+  
+  //expand the row after drawing the tree.
+  gtk_tree_view_expand_row(tree_view, path, FALSE);
+
+  json_node_free(root);
+  g_free(method_name);
+  g_object_unref(parser);
 }
 
 void draw_tree_view()
