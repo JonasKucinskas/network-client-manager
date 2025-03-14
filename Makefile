@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = `pkg-config --cflags gtk+-3.0 json-glib-1.0`
 LIBS = `pkg-config --libs gtk+-3.0 json-glib-1.0`
-LDFLAGS = -lcurl
+LDFLAGS = -lcurl -g
 
 
 SRC_DIR = src

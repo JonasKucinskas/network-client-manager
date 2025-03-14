@@ -35,7 +35,7 @@ gboolean api_save_auth_cookie()
 
     if(res != CURLE_OK)
     {
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+      g_print("curl_easy_perform() failed: %s\n",
       curl_easy_strerror(res));
       curl_easy_cleanup(curl);
       curl_global_cleanup();
@@ -49,8 +49,7 @@ gboolean api_save_auth_cookie()
   return TRUE;
 }
 
-//TODO check if unauthorized response
-void api_call(struct MemoryStruct *chunk, char *method, char *post_data)
+void api_call(struct MemoryStruct *chunk, char *method, const char *post_data)
 {
   CURL *curl;
   CURLcode res;
@@ -82,18 +81,15 @@ void api_call(struct MemoryStruct *chunk, char *method, char *post_data)
     
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)chunk);
 
-    //read cookie from "cookies" file
+    //read cookie from "bin/cookies" file
     curl_easy_setopt(curl, CURLOPT_COOKIEFILE, "cookies");
     res = curl_easy_perform(curl);
 
     if(res != CURLE_OK)
     {
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-      curl_easy_strerror(res));
+      alert_popup("API request failed", curl_easy_strerror(res));
+      curl_easy_cleanup(curl);
     }
-    
-    curl_easy_cleanup(curl);
+    curl_global_cleanup();
   }
- 
-  curl_global_cleanup();
 }
