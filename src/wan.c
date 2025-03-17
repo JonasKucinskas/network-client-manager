@@ -6,7 +6,6 @@
 
 //init in main
 GtkWidget *wan_view;
-static GtkWidget *api_parameters_view;
 
 enum
 {
@@ -17,56 +16,56 @@ enum
 
 Method methods[] = 
 {
-  {"auth.client",  NULL},
-  {"auth.client.token",  NULL},
-  {"auth.token.grant",  NULL},
-  {"auth.token.revoke",  NULL},
-  {"cmd.billing.newCycle", NULL},
-  {"cmd.carrier.scan",  NULL},
-  {"cmd.carrier.select",  NULL},
-  {"cmd.channelPci.lock",  NULL},
-  {"cmd.channelPci.scan",  NULL},
-  {"cmd.config.apply",  NULL},
-  {"cmd.config.discard",  NULL},
-  {"cmd.config.restore",  NULL},
-  {"cmd.mesh.discover", NULL},
-  {"cmd.mesh.discover.result",  NULL},
-  {"cmd.mesh.request", NULL},
-  {"cmd.port.poe.disable",  NULL},
-  {"cmd.port.poe.enable",  NULL},
-  {"cmd.sendUssd", NULL},
-  {"cmd.sms.get", NULL},
-  {"cmd.sms.sendMessage",  NULL},
-  {"cmd.starlink", NULL},
-  {"cmd.ap", NULL},
-  {"cmd.cellularModule.rescanNetwork",  NULL},
-  {"cmd.cellularModule.reset", NULL},
-  {"cmd.system.reboot", NULL},
-  {"cmd.wan.cellular", NULL},
-  {"cmd.wifi.connect", NULL},
-  {"cmd.wifi.disconnect", NULL},
-  {"cmd.wifi.forget", NULL},
-  {"cmd.wifi.result", NULL},
-  {"cmd.wifi.scan",  NULL},
-  {"config.gpio", NULL},
-  {"config.mesh",  NULL},
-  {"config.speedfusionConnectProtect",  NULL},
-  {"config.ssid.profile",  NULL},
-  {"config.wan.connection", NULL},
-  {"config.wan.connection.priority", NULL},
-  {"info.firmware",  NULL},
-  {"info.location",  NULL},
-  {"info.time", NULL},
-  {"status.cellularModule.temperature", NULL},
-  {"status.client", NULL},
-  {"status.extap.mesh", NULL},
-  {"status.extap.mesh.link", NULL},
-  {"status.gpio.input", NULL},
-  {"status.gpio.output", NULL},
-  {"status.lan.profile", NULL},
-  {"status.pepvpn", NULL},
-  {"status.wan.connection", NULL},
-  {"status.wan.connection.allowance", NULL}
+  {"auth.client", 0, NULL},
+  {"auth.client.token", 0, NULL},
+  {"auth.token.grant", 0, NULL},
+  {"auth.token.revoke", 0, NULL},
+  {"cmd.billing.newCycle", 0, NULL},
+  {"cmd.carrier.scan", 0, NULL},
+  {"cmd.carrier.select", 0, NULL},
+  {"cmd.channelPci.lock", 0, NULL},
+  {"cmd.channelPci.scan", 0, NULL},
+  {"cmd.config.apply", 0, NULL},
+  {"cmd.config.discard", 0, NULL},
+  {"cmd.config.restore", 0, NULL},
+  {"cmd.mesh.discover", 0, NULL},
+  {"cmd.mesh.discover.result", 0, NULL},
+  {"cmd.mesh.request", 0, NULL},
+  {"cmd.port.poe.disable", 0, NULL},
+  {"cmd.port.poe.enable", 0, NULL},
+  {"cmd.sendUssd", 0, NULL},
+  {"cmd.sms.get", 0, NULL},
+  {"cmd.sms.sendMessage", 0, NULL},
+  {"cmd.starlink", 0, NULL},
+  {"cmd.ap", 0, NULL},
+  {"cmd.cellularModule.rescanNetwork", 0, NULL},
+  {"cmd.cellularModule.reset", 0, NULL},
+  {"cmd.system.reboot", 0, NULL},
+  {"cmd.wan.cellular", 0, NULL},
+  {"cmd.wifi.connect", 0, NULL},
+  {"cmd.wifi.disconnect", 0, NULL},
+  {"cmd.wifi.forget", 0, NULL},
+  {"cmd.wifi.result", 0, NULL},
+  {"cmd.wifi.scan", 0, NULL},
+  {"config.gpio", 0, NULL},
+  {"config.mesh", 0, NULL},
+  {"config.speedfusionConnectProtect", 0, NULL},
+  {"config.ssid.profile", 0, NULL},
+  {"config.wan.connection", 0, NULL},
+  {"config.wan.connection.priority", 0, NULL},
+  {"info.firmware", 0, NULL},
+  {"info.location", 0, NULL},
+  {"info.time", 0, NULL},
+  {"status.cellularModule.temperature", 0, NULL},
+  {"status.client", 0, NULL},
+  {"status.extap.mesh", 0, NULL},
+  {"status.extap.mesh.link", 0, NULL},
+  {"status.gpio.input", 0, NULL},
+  {"status.gpio.output", 0, NULL},
+  {"status.lan.profile", 0, NULL},
+  {"status.pepvpn", 0, NULL},
+  {"status.wan.connection", 0, NULL},
+  {"status.wan.connection.allowance", 0, NULL}
 };
 
 static GtkTreeModel* create_and_fill_model(void)
@@ -220,10 +219,7 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
     {
       alert_popup("", "Parameters not set for this method.");
       
-      //todo will break, when adding parameters
-      int method_count = sizeof(methods) / sizeof(methods[0]);
-
-      show_parameter_dialog(methods, method_count, row_index);
+      show_parameter_dialog(methods, 50, row_index);
     }
     else
     {

@@ -11,9 +11,20 @@ struct MemoryStruct
 };
 
 typedef struct {
+    char *name;
+    char *value; 
+} Parameter;
+
+typedef struct {
     const gchar *name;  
-    GList *parameters; 
+    size_t param_count;
+    Parameter *parameters; 
 } Method;
+
+typedef struct {
+    GtkWidget *name;
+    GtkWidget *value;
+} ParameterWidgets;
 
 size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
 void json_tree_draw(JsonNode *node, GtkTreeStore *treestore, GtkTreeIter *iter);
