@@ -14,6 +14,62 @@ enum
   NUM_COLS
 };
 
+Method methods[] = 
+{
+  {"auth.client", 0, NULL},
+  {"auth.client.token", 0, NULL},
+  {"auth.token.grant", 0, NULL},
+  {"auth.token.revoke", 0, NULL},
+  {"cmd.billing.newCycle", 0, NULL},
+  {"cmd.carrier.scan", 0, NULL},
+  {"cmd.carrier.select", 0, NULL},
+  {"cmd.channelPci.lock", 0, NULL},
+  {"cmd.channelPci.scan", 0, NULL},
+  {"cmd.config.apply", 0, NULL},
+  {"cmd.config.discard", 0, NULL},
+  {"cmd.config.restore", 0, NULL},
+  {"cmd.mesh.discover", 0, NULL},
+  {"cmd.mesh.discover.result", 0, NULL},
+  {"cmd.mesh.request", 0, NULL},
+  {"cmd.port.poe.disable", 0, NULL},
+  {"cmd.port.poe.enable", 0, NULL},
+  {"cmd.sendUssd", 0, NULL},
+  {"cmd.sms.get", 0, NULL},
+  {"cmd.sms.sendMessage", 0, NULL},
+  {"cmd.starlink", 0, NULL},
+  {"cmd.ap", 0, NULL},
+  {"cmd.cellularModule.rescanNetwork", 0, NULL},
+  {"cmd.cellularModule.reset", 0, NULL},
+  {"cmd.system.reboot", 0, NULL},
+  {"cmd.wan.cellular", 0, NULL},
+  {"cmd.wifi.connect", 0, NULL},
+  {"cmd.wifi.disconnect", 0, NULL},
+  {"cmd.wifi.forget", 0, NULL},
+  {"cmd.wifi.result", 0, NULL},
+  {"cmd.wifi.scan", 0, NULL},
+  {"config.gpio", 0, NULL},
+  {"config.mesh", 0, NULL},
+  {"config.speedfusionConnectProtect", 0, NULL},
+  {"config.ssid.profile", 0, NULL},
+  {"config.wan.connection", 0, NULL},
+  {"config.wan.connection.priority", 0, NULL},
+  {"info.firmware", 0, NULL},
+  {"info.location", 0, NULL},
+  {"info.time", 0, NULL},
+  {"status.cellularModule.temperature", 0, NULL},
+  {"status.client", 0, NULL},
+  {"status.extap.mesh", 0, NULL},
+  {"status.extap.mesh.link", 0, NULL},
+  {"status.gpio.input", 0, NULL},
+  {"status.gpio.output", 0, NULL},
+  {"status.lan.profile", 0, NULL},
+  {"status.pepvpn", 0, NULL},
+  {"status.wan.connection", 0, NULL},
+  {"status.wan.connection.allowance", 0, NULL}
+};
+
+size_t method_count = 0;
+
 static GtkTreeModel* create_and_fill_model(void)
 {
   GtkTreeStore *treestore;
@@ -21,45 +77,18 @@ static GtkTreeModel* create_and_fill_model(void)
 
   treestore = gtk_tree_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING);
 
-  char **methods = (char *[])
-  { 
-    "auth.client",
-    "auth.client.token",
-    "cmd.carrier.scan",
-    "cmd.mesh.discover.result",
-    "cmd.mesh.discover",
-    "cmd.sms.get",
-    "cmd.ap",
-    "cmd.wifi.result",
-    "cmd.wifi.scan",
-    "config.mesh",
-    "config.speedfusionConnectProtect",
-    "config.ssid.profile",
-    "config.wan.connection",
-    "info.firmware",
-    "info.location",
-    "info.time",
-    "status.extap.mesh",
-    "status.extap.mesh.link",
-    "status.gpio.input",
-    "status.gpio.output",
-    "status.lan.profile",
-    "status.pepvpn",
-    "status.wan.connection",
-    "status.wan.connection.allowance",
-    NULL
-    }; 
+  method_count = sizeof(methods) / sizeof(methods[0]);
 
-
-  for(int i = 0; i < method_count(methods); i++)
+  for(int i = 0; i < method_count; i++)
   {
     gtk_tree_store_append(treestore, &toplevel, NULL);
-    gtk_tree_store_set(treestore, &toplevel, COL_METHOD, methods[i], COL_VALUE, "", -1);
+    gtk_tree_store_set(treestore, &toplevel, COL_METHOD, methods[i].name, COL_VALUE, "", -1);
   }
+
   return GTK_TREE_MODEL(treestore);
 }
 
-static void create_model()
+static void create_model(GtkWidget *view)
 {
   GtkTreeViewColumn *col;
   GtkCellRenderer *renderer;
@@ -68,7 +97,7 @@ static void create_model()
   col = gtk_tree_view_column_new();
 
   gtk_tree_view_column_set_title(col, "Method");
-  gtk_tree_view_append_column(GTK_TREE_VIEW(wan_view), col);
+  gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
 
   renderer = gtk_cell_renderer_text_new();
   gtk_tree_view_column_pack_start(col, renderer, TRUE);
@@ -81,7 +110,7 @@ static void create_model()
   col = gtk_tree_view_column_new();
   gtk_tree_view_column_set_title(col, "Value");
 
-  gtk_tree_view_append_column(GTK_TREE_VIEW(wan_view), col);
+  gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
 
   renderer = gtk_cell_renderer_text_new();
   gtk_tree_view_column_pack_start(col, renderer, TRUE);
@@ -93,11 +122,11 @@ static void create_model()
 
   model = create_and_fill_model();
 
-  gtk_tree_view_set_model(GTK_TREE_VIEW(wan_view), model);
+  gtk_tree_view_set_model(GTK_TREE_VIEW(view), model);
 
   g_object_unref(model); /* destroy model automatically with wan_view */
 
-  gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(wan_view)), GTK_SELECTION_SINGLE);
+  gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(view)), GTK_SELECTION_SINGLE);
 }
 
 void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column, gpointer user_data) 
@@ -111,7 +140,7 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   {
     return;
   }
-    
+
   GtkTreeIter parent, child;
   gboolean has_parent = gtk_tree_model_iter_parent(model, &parent, &iter);
   gboolean has_children = gtk_tree_model_iter_children(model, &child, &iter);
@@ -128,49 +157,55 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   if (has_children)
   {
     //if used clicked on api method row and it already has data filled in, 
-    //expand/collapse that row
+    //expand/collapse that row with all its children
     toggle_row_expansion(tree_view, path, !is_expanded, TRUE); 
     return;
   }
-
-
-  gchar *method_name;
   
-  gtk_tree_model_get(model, &iter, COL_METHOD, &method_name, -1);
-  g_print("Row activated: %s\n", method_name);
+  int row_index = gtk_tree_path_get_indices(path)[0];
+  Method *selected_method = &methods[row_index];
+
+  g_print("Row activated: %s\n", selected_method->name);
 
   JsonParser *parser = json_parser_new();
   GError *error = NULL;
+
 
   struct MemoryStruct chunk;
   chunk.memory = malloc(1);  
   chunk.size = 0;
 
-  api_call(&chunk, method_name, NULL);
+  api_call(&chunk, selected_method);
+
+  if (chunk.size == 0)
+  {
+    //api returned an error.
+    return;
+  }
 
   json_parser_load_from_data(parser, chunk.memory, chunk.size, &error);
   
+  //no longer needed, data is in parser.
   free(chunk.memory);
   
   if(error)
   {
-    g_print("Unable to parse: %s\n", error->message);
-        
+    alert_popup("Error while parsing json", error->message);
+
     g_error_free(error);
     g_object_unref(parser);
-    g_free(method_name);
     return;
   }
+
   JsonNode *root = json_parser_get_root(parser);
 
   //api returns code 200 always, so I have to parse json for actual error messages :(((
-  gboolean json_error = json_error_parse(root);
+  int json_code = json_error_parse(root);
   
-  if(json_error)
+  if(json_code != 200)
   {
-    g_print("api returned error");
+    handle_json_error(json_code, row_index);
     json_node_free(root); 
-    g_free(method_name); 
     return;
   }
   
@@ -180,7 +215,6 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   gtk_tree_view_expand_row(tree_view, path, FALSE);
 
   json_node_free(root);
-  g_free(method_name);
   g_object_unref(parser);
 }
 
@@ -188,6 +222,6 @@ void draw_tree_view()
 {
   //set wan_view and model;
   g_signal_connect(wan_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
-  create_model();
+  create_model(wan_view);
   gtk_widget_show_all(wan_view);
 }

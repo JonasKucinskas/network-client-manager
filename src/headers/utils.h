@@ -10,10 +10,28 @@ struct MemoryStruct
   size_t size;
 };
 
+typedef struct {
+    char *name;
+    char *value; 
+} Parameter;
+
+typedef struct {
+    const gchar *name;  
+    size_t param_count;
+    Parameter *parameters; 
+} Method;
+
+typedef struct {
+    GtkWidget *name;
+    GtkWidget *value;
+} ParameterWidgets;
+
 size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
 void json_tree_draw(JsonNode *node, GtkTreeStore *treestore, GtkTreeIter *iter);
-int method_count(char **methods);
-gboolean json_error_parse(JsonNode *root);
+int json_error_parse(JsonNode *root);
 void toggle_row_expansion(GtkTreeView *tree_view, GtkTreePath *path, gboolean expand, gboolean expand_all);
+gchar* json_get_value(JsonNode *root, const char* json_path);
+void handle_json_error(int error_code, int row_index);
+void make_post_data_from_object(char *str, Method *method);
 
 #endif
