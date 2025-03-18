@@ -2,8 +2,8 @@
 #include "headers/utils.h"
 #include "headers/wan.h"
 
-int selected_method_index = -1;
 GList *parameter_rows = NULL;
+Method *selected_method = NULL;
 
 void alert_popup(const char *header, const char *body)
 {
@@ -19,22 +19,29 @@ void alert_popup(const char *header, const char *body)
 static void on_submit(GtkButton *button, gpointer user_data) 
 {
     GtkWidget *vbox = GTK_WIDGET(user_data);
-    Method *selected_method = &methods[selected_method_index];
 
     for (GList *node = parameter_rows; node != NULL; node = node->next) 
     {
         ParameterWidgets *row = (ParameterWidgets *)node->data;
 
-        //TODO CHECK IF EMPTY VALUES        
+        //TODO check if values already exist in method parameters
         const gchar *name = gtk_entry_get_text(GTK_ENTRY(row->name)); 
         const gchar *value = gtk_entry_get_text(GTK_ENTRY(row->value)); 
+
+
+        //empty non null string
+        if (name[0] == '\0' || value[0] == '\0')
+        {
+            continue;
+        }
 
         selected_method->parameters = realloc(
             selected_method->parameters,
             (selected_method->param_count + 1) * sizeof(Parameter)
         );
 
-        if (selected_method->parameters == NULL) {
+        if (selected_method->parameters == NULL) 
+        {
             perror("Failed to allocate memory for parameters");
             return;
         }
@@ -44,14 +51,21 @@ static void on_submit(GtkButton *button, gpointer user_data)
         param->name = strdup(name); 
         param->value = strdup(value);
         selected_method->param_count++;
-
-        //g_print("method name: %s, Name: %s, Value: %s\n", selected_method->name, name, value);
     }
+
+    //if user submits params and then decides to add more and submits again,
+    //this will prevent param dublication.
+    g_list_free_full(parameter_rows, g_free);
+    parameter_rows = NULL;
+
+    //TODO free selected method on dialog close.
 }
 
 static void on_method_selected(GtkComboBox *combo, gpointer user_data) 
 {
-    selected_method_index = gtk_combo_box_get_active(combo);
+    //in case user changed selected method in combo box.
+    int selected_method_index = gtk_combo_box_get_active(combo);
+    selected_method = &methods[selected_method_index];
     if (selected_method_index == -1) return;
 
     GtkWidget *dialog = GTK_WIDGET(user_data);
@@ -61,9 +75,8 @@ static void on_method_selected(GtkComboBox *combo, gpointer user_data)
 static void on_add_parameter(GtkButton *button, gpointer user_data) 
 {
     GtkWidget *vbox = GTK_WIDGET(user_data);
-    //TODO: move to on submit:
-    //GtkComboBox *combo = gtk_bin_get_child(GTK_BIN(vbox));
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5); 
+
 
     GtkWidget *name_label = gtk_label_new("Name:");
     GtkWidget *name_entry = gtk_entry_new();
@@ -78,44 +91,18 @@ static void on_add_parameter(GtkButton *button, gpointer user_data)
 
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 5);
 
-    GList *parameters = g_object_get_data(G_OBJECT(vbox), "parameter_rows");
-    if (!parameters) 
-    {
-        parameters = NULL;
-    }
-
-    //TODO: in case user changed selected method.
-    //selected_method_index = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
-        
-    /*this is retarded
-        stores text widgets inside method->parameters
-        this is easies way to get text values after they are submited.
-        to retrieve actual parameter values for each method:
-
-        for (GList *node = selected_method->parameters; node != NULL; node = node->next) 
-        {
-            ParameterWidgets *row = (ParameterWidgets *)node->data;
-            
-            const gchar *name = gtk_entry_get_text(GTK_ENTRY(row->name)); 
-            const gchar *value = gtk_entry_get_text(GTK_ENTRY(row->value)); 
-    
-            // Print the values or process them
-            g_print("method name: %s, Name: %s, Value: %s\n", selected_method->name, name, value);
-        }
-    */
     ParameterWidgets *new_row = g_new(ParameterWidgets, 1);
     new_row->name = name_entry;
     new_row->value = value_entry;
 
     parameter_rows = g_list_append(parameter_rows, new_row);
-    //g_object_set_data(G_OBJECT(vbox), "parameter_rows", parameters);
 
     gtk_widget_show_all(vbox);
 }
 
-void show_parameter_dialog(Method *methods, int method_count, int method_index) 
+void show_parameter_dialog(int method_index) 
 {
-    selected_method_index = method_index;
+    selected_method = &methods[method_index];
     GtkWidget *dialog, *vbox, *hbox_combo_button, *combo_box, *label, *add_button, *submit_button;
 
     dialog = gtk_dialog_new_with_buttons ("Select API Method",
@@ -137,7 +124,7 @@ void show_parameter_dialog(Method *methods, int method_count, int method_index)
     hbox_combo_button = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
 
     combo_box = gtk_combo_box_text_new();
-
+    
     for (int i = 0; i < method_count; i++) 
     {
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo_box), methods[i].name);

@@ -4,6 +4,6 @@
 #include "utils.h"
 
 void alert_popup(const char *header, const char *body);
-void show_parameter_dialog(Method methods[], int method_count, int row_index);
+void show_parameter_dialog(int row_index);
 
 #endif

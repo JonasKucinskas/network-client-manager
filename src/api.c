@@ -49,7 +49,7 @@ gboolean api_save_auth_cookie()
   return TRUE;
 }
 
-void api_call(struct MemoryStruct *chunk, char *method, const char *post_data)
+void api_call(struct MemoryStruct *chunk, Method *method)
 {
   CURL *curl;
   CURLcode res;
@@ -61,18 +61,23 @@ void api_call(struct MemoryStruct *chunk, char *method, const char *post_data)
   if(curl) 
   {
     char url[34] = BASE_URL;
-    strcat(url, method);
+    strcat(url, method->name);
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
 
     //insecure, but its okay for now
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 
-    if (post_data)
+    if (method->param_count > 0)
     {
+      char *post_data;
+      make_post_data_from_object(post_data, method);
+
       curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
       curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(post_data));
       curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
+      free(post_data); 
     }
 
     /* cache the CA cert bundle in memory for a week */
@@ -90,6 +95,7 @@ void api_call(struct MemoryStruct *chunk, char *method, const char *post_data)
       alert_popup("API request failed", curl_easy_strerror(res));
       curl_easy_cleanup(curl);
     }
+
     curl_global_cleanup();
   }
 }

@@ -7,6 +7,7 @@
 #include "headers/utils.h"
 #include "headers/widgets.h"
 #include "headers/api.h"
+#include "headers/wan.h"
 
 size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -159,5 +160,54 @@ void toggle_row_expansion(GtkTreeView *tree_view, GtkTreePath *path, gboolean ex
   else 
   {
     gtk_tree_view_collapse_row(tree_view, path);
+  }
+}
+
+void handle_json_error(int error_code, int row_index)
+{
+  if(error_code == 401)//unauthorized
+    {
+      //writes new cookie if current cookie is wrong or does not exist
+      gboolean saved_cookie = api_save_auth_cookie();
+
+      if (saved_cookie == FALSE)
+      {
+        alert_popup("Authorization failed", "Failed to re-authorize.");
+      }
+      alert_popup("", "Authorization failed, re-authorized.");
+    }
+    else if(error_code == 999)//unknown function
+    {
+      alert_popup("", "This method does not exist");
+    }
+    else if(error_code == 404)//unsupported request
+    {
+      alert_popup("", "Parameters not set for this method.");
+      
+      show_parameter_dialog(row_index);
+    }
+    else
+    {
+      alert_popup("", "Unknown return code.");
+    }
+}
+
+void make_post_data_from_object(char *str, Method *method)
+{
+  str[0] = '\0';
+  for (int i = 0; i < method->param_count; i++)
+  {
+    char *name = method->parameters[i].name;
+    char *value = method->parameters[i].value;
+
+    strcat(str, name);
+    strcat(str, "=");
+    strcat(str, value);
+
+    //if not last param:
+    if (i + 1 < method->param_count)
+    {
+      strcat(str, "&");
+    }
   }
 }

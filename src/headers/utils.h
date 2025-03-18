@@ -31,5 +31,7 @@ void json_tree_draw(JsonNode *node, GtkTreeStore *treestore, GtkTreeIter *iter);
 int json_error_parse(JsonNode *root);
 void toggle_row_expansion(GtkTreeView *tree_view, GtkTreePath *path, gboolean expand, gboolean expand_all);
 gchar* json_get_value(JsonNode *root, const char* json_path);
+void handle_json_error(int error_code, int row_index);
+void make_post_data_from_object(char *str, Method *method);
 
 #endif

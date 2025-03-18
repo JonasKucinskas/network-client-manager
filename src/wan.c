@@ -68,6 +68,8 @@ Method methods[] =
   {"status.wan.connection.allowance", 0, NULL}
 };
 
+size_t method_count = 0;
+
 static GtkTreeModel* create_and_fill_model(void)
 {
   GtkTreeStore *treestore;
@@ -75,8 +77,7 @@ static GtkTreeModel* create_and_fill_model(void)
 
   treestore = gtk_tree_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING);
 
-  //todo will break, when adding parameters
-  int method_count = sizeof(methods) / sizeof(methods[0]);
+  method_count = sizeof(methods) / sizeof(methods[0]);
 
   for(int i = 0; i < method_count; i++)
   {
@@ -139,7 +140,7 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   {
     return;
   }
-    
+
   GtkTreeIter parent, child;
   gboolean has_parent = gtk_tree_model_iter_parent(model, &parent, &iter);
   gboolean has_children = gtk_tree_model_iter_children(model, &child, &iter);
@@ -160,18 +161,21 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
     toggle_row_expansion(tree_view, path, !is_expanded, TRUE); 
     return;
   }
-
+  
   int row_index = gtk_tree_path_get_indices(path)[0];
-  g_print("Row activated: %s\n", methods[row_index].name);
+  Method *selected_method = &methods[row_index];
+
+  g_print("Row activated: %s\n", selected_method->name);
 
   JsonParser *parser = json_parser_new();
   GError *error = NULL;
+
 
   struct MemoryStruct chunk;
   chunk.memory = malloc(1);  
   chunk.size = 0;
 
-  api_call(&chunk, methods[row_index].name, NULL);
+  api_call(&chunk, selected_method);
 
   if (chunk.size == 0)
   {
@@ -181,7 +185,7 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
 
   json_parser_load_from_data(parser, chunk.memory, chunk.size, &error);
   
-  //no longer needed
+  //no longer needed, data is in parser.
   free(chunk.memory);
   
   if(error)
@@ -200,33 +204,7 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   
   if(json_code != 200)
   {
-    if(json_code == 401)//unauthorized
-    {
-      //writes new cookie if current cookie is wrong or does not exist
-      gboolean saved_cookie = api_save_auth_cookie();
-
-      if (saved_cookie == FALSE)
-      {
-        alert_popup("Authorization failed", "Failed to re-authorize.");
-      }
-      alert_popup("", "Authorization failed, re-authorized.");
-    }
-    else if(json_code == 999)//unknown function
-    {
-      alert_popup("", "This method does not exist");
-    }
-    else if(json_code == 404)//unsupported request
-    {
-      alert_popup("", "Parameters not set for this method.");
-      
-      show_parameter_dialog(methods, 50, row_index);
-    }
-    else
-    {
-      alert_popup("", "Unknown return code.");
-    }
-
-    //json returned error.
+    handle_json_error(json_code, row_index);
     json_node_free(root); 
     return;
   }
