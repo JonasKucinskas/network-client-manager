@@ -14,60 +14,7 @@ enum
   NUM_COLS
 };
 
-Method methods[] = 
-{
-  {"auth.client", 0, NULL},
-  {"auth.client.token", 0, NULL},
-  {"auth.token.grant", 0, NULL},
-  {"auth.token.revoke", 0, NULL},
-  {"cmd.billing.newCycle", 0, NULL},
-  {"cmd.carrier.scan", 0, NULL},
-  {"cmd.carrier.select", 0, NULL},
-  {"cmd.channelPci.lock", 0, NULL},
-  {"cmd.channelPci.scan", 0, NULL},
-  {"cmd.config.apply", 0, NULL},
-  {"cmd.config.discard", 0, NULL},
-  {"cmd.config.restore", 0, NULL},
-  {"cmd.mesh.discover", 0, NULL},
-  {"cmd.mesh.discover.result", 0, NULL},
-  {"cmd.mesh.request", 0, NULL},
-  {"cmd.port.poe.disable", 0, NULL},
-  {"cmd.port.poe.enable", 0, NULL},
-  {"cmd.sendUssd", 0, NULL},
-  {"cmd.sms.get", 0, NULL},
-  {"cmd.sms.sendMessage", 0, NULL},
-  {"cmd.starlink", 0, NULL},
-  {"cmd.ap", 0, NULL},
-  {"cmd.cellularModule.rescanNetwork", 0, NULL},
-  {"cmd.cellularModule.reset", 0, NULL},
-  {"cmd.system.reboot", 0, NULL},
-  {"cmd.wan.cellular", 0, NULL},
-  {"cmd.wifi.connect", 0, NULL},
-  {"cmd.wifi.disconnect", 0, NULL},
-  {"cmd.wifi.forget", 0, NULL},
-  {"cmd.wifi.result", 0, NULL},
-  {"cmd.wifi.scan", 0, NULL},
-  {"config.gpio", 0, NULL},
-  {"config.mesh", 0, NULL},
-  {"config.speedfusionConnectProtect", 0, NULL},
-  {"config.ssid.profile", 0, NULL},
-  {"config.wan.connection", 0, NULL},
-  {"config.wan.connection.priority", 0, NULL},
-  {"info.firmware", 0, NULL},
-  {"info.location", 0, NULL},
-  {"info.time", 0, NULL},
-  {"status.cellularModule.temperature", 0, NULL},
-  {"status.client", 0, NULL},
-  {"status.extap.mesh", 0, NULL},
-  {"status.extap.mesh.link", 0, NULL},
-  {"status.gpio.input", 0, NULL},
-  {"status.gpio.output", 0, NULL},
-  {"status.lan.profile", 0, NULL},
-  {"status.pepvpn", 0, NULL},
-  {"status.wan.connection", 0, NULL},
-  {"status.wan.connection.allowance", 0, NULL}
-};
-
+Method *methods;
 size_t method_count = 0;
 
 static GtkTreeModel* create_and_fill_model(void)
@@ -220,6 +167,7 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
 
 void draw_tree_view()
 {
+  read_json(&methods);
   //set wan_view and model;
   g_signal_connect(wan_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
   create_model(wan_view);

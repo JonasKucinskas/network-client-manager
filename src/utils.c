@@ -166,30 +166,30 @@ void toggle_row_expansion(GtkTreeView *tree_view, GtkTreePath *path, gboolean ex
 void handle_json_error(int error_code, int row_index)
 {
   if(error_code == 401)//unauthorized
+  {
+    //writes new cookie if current cookie is wrong or does not exist
+    gboolean saved_cookie = api_save_auth_cookie();
+ 
+    if (saved_cookie == FALSE)
     {
-      //writes new cookie if current cookie is wrong or does not exist
-      gboolean saved_cookie = api_save_auth_cookie();
-
-      if (saved_cookie == FALSE)
-      {
-        alert_popup("Authorization failed", "Failed to re-authorize.");
-      }
-      alert_popup("", "Authorization failed, re-authorized.");
+      alert_popup("Authorization failed", "Failed to re-authorize.");
     }
-    else if(error_code == 999)//unknown function
-    {
-      alert_popup("", "This method does not exist");
-    }
-    else if(error_code == 404)//unsupported request
-    {
-      alert_popup("", "Parameters not set for this method.");
-      
-      show_parameter_dialog(row_index);
-    }
-    else
-    {
-      alert_popup("", "Unknown return code.");
-    }
+    alert_popup("", "Authorization failed, re-authorized.");
+  }
+  else if(error_code == 999)//unknown function
+  {
+    alert_popup("", "This method does not exist");
+  }
+  else if(error_code == 404)//unsupported request
+  {
+    alert_popup("", "Parameters not set for this method.");
+    
+    show_parameter_dialog(row_index);
+  }
+  else
+  {
+    alert_popup("", "Unknown return code.");
+  }
 }
 
 void make_post_data_from_object(char *str, Method *method)
@@ -211,3 +211,60 @@ void make_post_data_from_object(char *str, Method *method)
     }
   }
 }
+
+void read_json(Method **method_array)
+{
+  JsonParser *parser = json_parser_new();
+  GError *err = NULL;
+  
+  if (!json_parser_load_from_file(parser, "config.json", &err)) 
+  {
+    //gprint("error loading json file: %s\n", err->message);
+    g_error_free(err);
+    g_object_unref(parser);
+    return;
+  }
+  
+  JsonObject *object = json_node_get_object(json_parser_get_root(parser));
+  JsonArray *methods_member = json_object_get_array_member(object, "methods");
+  guint method_count = json_array_get_length(methods_member);
+
+  *method_array = malloc(method_count * sizeof(Method));
+  if (*method_array == NULL) 
+  {
+    perror("failed to alloc memory to methods");
+    return;
+  }
+  
+  for (guint i = 0; i < method_count; i++) 
+  {
+    JsonObject *method_object = json_array_get_object_element(methods_member, i);
+    
+    const gchar *name = json_object_get_string_member(method_object, "name");
+    (*method_array)[i].name = strdup(name);
+
+    JsonArray *parameters = json_object_get_array_member(method_object, "parameters");
+    guint param_len = json_array_get_length(parameters);
+    (*method_array)[i].param_count = param_len;
+    
+    (*method_array)[i].parameters = malloc(param_len * sizeof(Parameter));
+
+    if ((*method_array)[i].parameters == NULL) 
+    {
+      perror("failed to alloc memory for parameters");
+      return;
+    }
+
+    for (guint j = 0; j < param_len; j++) 
+    {
+      JsonObject *paramObj = json_array_get_object_element(parameters, j);
+      const char *param_name = json_object_get_string_member(paramObj, "name");
+      const char *param_value = json_object_get_string_member(paramObj, "value");
+
+      (*method_array)[i].parameters[j].name = strdup(param_name);
+      (*method_array)[i].parameters[j].value = strdup(param_value);
+    }
+  }
+
+  g_object_unref(parser);
+} 

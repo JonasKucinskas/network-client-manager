@@ -1,0 +1,217 @@
+{
+    "username": "username",
+    "passwd": "passwd",
+    "ip": "http://192.168.50.1/api",
+    "methods": [
+        {
+            "name": "auth.client",
+            "parameters": 
+            [
+                {
+                    "name": "name1",
+                    "value": "val1"
+                },
+                {   
+                    "name": "name2",
+                    "value": "val2"
+                }
+            ]
+        },
+        {
+            "name": "auth.client.token",
+            "parameters": []
+        },
+        {
+            "name": "auth.token.grant",
+            "parameters": []
+        },
+        {
+            "name": "auth.token.revoke",
+            "parameters": []
+        },
+        {
+            "name": "cmd.billing.newCycle",
+            "parameters": []
+        },
+        {
+            "name": "cmd.carrier.scan",
+            "parameters": []
+        },
+        {
+            "name": "cmd.carrier.select",
+            "parameters": []
+        },
+        {
+            "name": "cmd.channelPci.lock",
+            "parameters": []
+        },
+        {
+            "name": "cmd.channelPci.scan",
+            "parameters": []
+        },
+        {
+            "name": "cmd.config.apply",
+            "parameters": []
+        },
+        {
+            "name": "cmd.config.discard",
+            "parameters": []
+        },
+        {
+            "name": "cmd.config.restore",
+            "parameters": []
+        },
+        {
+            "name": "cmd.mesh.discover",
+            "parameters": []
+        },
+        {
+            "name": "cmd.mesh.discover.result",
+            "parameters": []
+        },
+        {
+            "name": "cmd.mesh.request",
+            "parameters": []
+        },
+        {
+            "name": "cmd.port.poe.disable",
+            "parameters": []
+        },
+        {
+            "name": "cmd.port.poe.enable",
+            "parameters": []
+        },
+        {
+            "name": "cmd.sendUssd",
+            "parameters": []
+        },
+        {
+            "name": "cmd.sms.get",
+            "parameters": []
+        },
+        {
+            "name": "cmd.sms.sendMessage",
+            "parameters": []
+        },
+        {
+            "name": "cmd.starlink",
+            "parameters": []
+        },
+        {
+            "name": "cmd.ap",
+            "parameters": []
+        },
+        {
+            "name": "cmd.cellularModule.rescanNetwork",
+            "parameters": []
+        },
+        {
+            "name": "cmd.cellularModule.reset",
+            "parameters": []
+        },
+        {
+            "name": "cmd.system.reboot",
+            "parameters": []
+        },
+        {
+            "name": "cmd.wan.cellular",
+            "parameters": []
+        },
+        {
+            "name": "cmd.wifi.connect",
+            "parameters": []
+        },
+        {
+            "name": "cmd.wifi.disconnect",
+            "parameters": []
+        },
+        {
+            "name": "cmd.wifi.forget",
+            "parameters": []
+        },
+        {
+            "name": "cmd.wifi.result",
+            "parameters": []
+        },
+        {
+            "name": "cmd.wifi.scan",
+            "parameters": []
+        },
+        {
+            "name": "config.gpio",
+            "parameters": []
+        },
+        {
+            "name": "config.mesh",
+            "parameters": []
+        },
+        {
+            "name": "config.speedfusionConnectProtect",
+            "parameters": []
+        },
+        {
+            "name": "config.ssid.profile",
+            "parameters": []
+        },
+        {
+            "name": "config.wan.connection",
+            "parameters": []
+        },
+        {
+            "name": "config.wan.connection.priority",
+            "parameters": []
+        },
+        {
+            "name": "info.firmware",
+            "parameters": []
+        },
+        {
+            "name": "info.location",
+            "parameters": []
+        },
+        {
+            "name": "info.time",
+            "parameters": []
+        },
+        {
+            "name": "status.cellularModule.temperature",
+            "parameters": []
+        },
+        {
+            "name": "status.client",
+            "parameters": []
+        },
+        {
+            "name": "status.extap.mesh",
+            "parameters": []
+        },
+        {
+            "name": "status.extap.mesh.link",
+            "parameters": []
+        },
+        {
+            "name": "status.gpio.input",
+            "parameters": []
+        },
+        {
+            "name": "status.gpio.output",
+            "parameters": []
+        },
+        {
+            "name": "status.lan.profile",
+            "parameters": []
+        },
+        {
+            "name": "status.pepvpn",
+            "parameters": []
+        },
+        {
+            "name": "status.wan.connection",
+            "parameters": []
+        },
+        {
+            "name": "status.wan.connection.allowance",
+            "parameters": []
+        }
+    ]
+}
