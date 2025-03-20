@@ -212,8 +212,10 @@ void make_post_data_from_object(char *str, Method *method)
   }
 }
 
-void read_json(Method **method_array)
+void read_json(MethodContainer **method_container)
 {
+  *method_container = malloc(sizeof(MethodContainer));
+
   JsonParser *parser = json_parser_new();
   GError *err = NULL;
   
@@ -229,8 +231,10 @@ void read_json(Method **method_array)
   JsonArray *methods_member = json_object_get_array_member(object, "methods");
   guint method_count = json_array_get_length(methods_member);
 
-  *method_array = malloc(method_count * sizeof(Method));
-  if (*method_array == NULL) 
+  (*method_container)->methods = malloc(method_count * sizeof(Method));
+  (*method_container)->method_count = method_count;
+
+  if ((*method_container)->methods == NULL) 
   {
     perror("failed to alloc memory to methods");
     return;
@@ -241,15 +245,15 @@ void read_json(Method **method_array)
     JsonObject *method_object = json_array_get_object_element(methods_member, i);
     
     const gchar *name = json_object_get_string_member(method_object, "name");
-    (*method_array)[i].name = strdup(name);
+    (*method_container)->methods[i].name = strdup(name);
 
     JsonArray *parameters = json_object_get_array_member(method_object, "parameters");
     guint param_len = json_array_get_length(parameters);
-    (*method_array)[i].param_count = param_len;
+    (*method_container)->methods[i].param_count = param_len;
     
-    (*method_array)[i].parameters = malloc(param_len * sizeof(Parameter));
+    (*method_container)->methods[i].parameters = malloc(param_len * sizeof(Parameter));
 
-    if ((*method_array)[i].parameters == NULL) 
+    if ((*method_container)->methods[i].parameters == NULL) 
     {
       perror("failed to alloc memory for parameters");
       return;
@@ -261,8 +265,8 @@ void read_json(Method **method_array)
       const char *param_name = json_object_get_string_member(paramObj, "name");
       const char *param_value = json_object_get_string_member(paramObj, "value");
 
-      (*method_array)[i].parameters[j].name = strdup(param_name);
-      (*method_array)[i].parameters[j].value = strdup(param_value);
+      (*method_container)->methods[i].parameters[j].name = strdup(param_name);
+      (*method_container)->methods[i].parameters[j].value = strdup(param_value);
     }
   }
 

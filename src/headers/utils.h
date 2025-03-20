@@ -22,6 +22,11 @@ typedef struct {
 } Method;
 
 typedef struct {
+    size_t method_count;
+    Method *methods;
+} MethodContainer;
+
+typedef struct {
     GtkWidget *name;
     GtkWidget *value;
 } ParameterWidgets;
@@ -33,6 +38,6 @@ void toggle_row_expansion(GtkTreeView *tree_view, GtkTreePath *path, gboolean ex
 gchar* json_get_value(JsonNode *root, const char* json_path);
 void handle_json_error(int error_code, int row_index);
 void make_post_data_from_object(char *str, Method *method);
-void read_json(Method **methods);
+void read_json(MethodContainer **method_container);
 
 #endif
