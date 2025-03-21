@@ -272,3 +272,63 @@ void read_json(MethodContainer **method_container)
 
   g_object_unref(parser);
 } 
+
+//finds method in json and writes its params to it.
+void write_params_json(Method *method) 
+{
+  JsonParser *parser = json_parser_new();
+  GError *file_error = NULL;
+
+  json_parser_load_from_file (parser, "config.json", &file_error);
+  if(file_error)
+  {
+    alert_popup("Error while parsing json", file_error->message);
+
+    g_error_free(file_error);
+    return;
+  }
+
+  JsonNode *root = json_parser_get_root(parser);
+  JsonObject *root_object = json_node_get_object(root);
+  
+  JsonArray *methods_array = json_object_get_array_member(root_object, "methods");
+  size_t methods_length = json_array_get_length(methods_array);
+
+  for (size_t i = 0; i < methods_length; i++) 
+  {
+    JsonObject *method_object = json_array_get_object_element(methods_array, i);
+    const gchar *existing_method_name = json_object_get_string_member(method_object, "name");
+
+    if (g_strcmp0(existing_method_name, method->name) == 0) 
+    {
+      JsonArray *parameters_array = json_object_get_array_member(method_object, "parameters");
+      size_t params_length = json_array_get_length(parameters_array);
+      
+      //remove old params
+      for (size_t j = params_length; j > 0; j--) 
+      {
+        json_array_remove_element(parameters_array, j - 1);
+        params_length = json_array_get_length(parameters_array);
+      }
+
+      //insert new params
+      for (size_t k = 0; k < method->param_count; k++) 
+      {
+        JsonObject *param_object = json_object_new();
+        json_object_set_string_member(param_object, "name", method->parameters[k].name);
+        json_object_set_string_member(param_object, "value", method->parameters[k].value);
+        json_array_add_object_element(parameters_array, param_object);
+      }
+
+      break;
+    }
+  }
+
+  //JsonNode *root_node = json_node_new_from_object(root_object);
+  JsonGenerator *generator = json_generator_new();
+  json_generator_set_root(generator, root);
+  json_generator_to_file(generator, "config.json", NULL);
+  
+  g_object_unref(generator);
+  g_object_unref(parser);
+}

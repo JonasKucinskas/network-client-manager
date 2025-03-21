@@ -39,5 +39,7 @@ gchar* json_get_value(JsonNode *root, const char* json_path);
 void handle_json_error(int error_code, int row_index);
 void make_post_data_from_object(char *str, Method *method);
 void read_json(MethodContainer **method_container);
+void write_params_json(Method *method);
+
 
 #endif

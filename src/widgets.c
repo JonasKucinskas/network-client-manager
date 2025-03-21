@@ -29,6 +29,8 @@ static void on_submit(GtkButton *button, gpointer user_data)
         const gchar *name = gtk_entry_get_text(GTK_ENTRY(row->name)); 
         const gchar *value = gtk_entry_get_text(GTK_ENTRY(row->value)); 
 
+
+        //TODO if params get deleted in ui, this does not delete them from memory.
         //empty, non null string
         if (name[0] == '\0' || value[0] == '\0')
         {
@@ -50,12 +52,14 @@ static void on_submit(GtkButton *button, gpointer user_data)
         selected_method->param_count++;
     }
 
+    write_params_json(selected_method); 
+
     //if user submits params and then decides to add more and submits again,
     //this will prevent param dublication.
     g_list_free_full(parameter_rows, g_free);
     parameter_rows = NULL;
 
-    //TODO free selected method on dialog close.
+    //TODO free selected method on dialog close, buts its fine actualy.
 }
 
 static void on_method_selected(GtkComboBox *combo, gpointer user_data) 
