@@ -307,6 +307,8 @@ void write_params_json(Method *method)
       //remove old params
       for (size_t j = params_length; j > 0; j--) 
       {
+        //this is so stupid, i dont even want to look at this again
+        //todo invetigate this further, theres no ways this is how it works.
         json_array_remove_element(parameters_array, j - 1);
         params_length = json_array_get_length(parameters_array);
       }
