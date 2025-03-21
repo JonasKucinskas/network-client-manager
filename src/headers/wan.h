@@ -4,8 +4,7 @@
 #include "utils.h"
 
 extern GtkWidget *wan_view;
-extern Method methods[];
-extern size_t method_count;
+extern MethodContainer *method_container;
 
 void draw_tree_view();
 

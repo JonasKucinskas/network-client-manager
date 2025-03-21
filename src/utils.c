@@ -166,30 +166,30 @@ void toggle_row_expansion(GtkTreeView *tree_view, GtkTreePath *path, gboolean ex
 void handle_json_error(int error_code, int row_index)
 {
   if(error_code == 401)//unauthorized
+  {
+    //writes new cookie if current cookie is wrong or does not exist
+    gboolean saved_cookie = api_save_auth_cookie();
+ 
+    if (saved_cookie == FALSE)
     {
-      //writes new cookie if current cookie is wrong or does not exist
-      gboolean saved_cookie = api_save_auth_cookie();
-
-      if (saved_cookie == FALSE)
-      {
-        alert_popup("Authorization failed", "Failed to re-authorize.");
-      }
-      alert_popup("", "Authorization failed, re-authorized.");
+      alert_popup("Authorization failed", "Failed to re-authorize.");
     }
-    else if(error_code == 999)//unknown function
-    {
-      alert_popup("", "This method does not exist");
-    }
-    else if(error_code == 404)//unsupported request
-    {
-      alert_popup("", "Parameters not set for this method.");
-      
-      show_parameter_dialog(row_index);
-    }
-    else
-    {
-      alert_popup("", "Unknown return code.");
-    }
+    alert_popup("", "Authorization failed, re-authorized.");
+  }
+  else if(error_code == 999)//unknown function
+  {
+    alert_popup("", "This method does not exist");
+  }
+  else if(error_code == 404)//unsupported request
+  {
+    alert_popup("", "Parameters not set for this method.");
+    
+    show_parameter_dialog(row_index);
+  }
+  else
+  {
+    alert_popup("", "Unknown return code.");
+  }
 }
 
 void make_post_data_from_object(char *str, Method *method)
@@ -210,4 +210,127 @@ void make_post_data_from_object(char *str, Method *method)
       strcat(str, "&");
     }
   }
+}
+
+void read_json(MethodContainer **method_container)
+{
+  *method_container = malloc(sizeof(MethodContainer));
+
+  JsonParser *parser = json_parser_new();
+  GError *err = NULL;
+  
+  if (!json_parser_load_from_file(parser, "config.json", &err)) 
+  {
+    //gprint("error loading json file: %s\n", err->message);
+    g_error_free(err);
+    g_object_unref(parser);
+    return;
+  }
+  
+  JsonObject *object = json_node_get_object(json_parser_get_root(parser));
+  JsonArray *methods_member = json_object_get_array_member(object, "methods");
+  guint method_count = json_array_get_length(methods_member);
+
+  (*method_container)->methods = malloc(method_count * sizeof(Method));
+  (*method_container)->method_count = method_count;
+
+  if ((*method_container)->methods == NULL) 
+  {
+    perror("failed to alloc memory to methods");
+    return;
+  }
+  
+  for (guint i = 0; i < method_count; i++) 
+  {
+    JsonObject *method_object = json_array_get_object_element(methods_member, i);
+    
+    const gchar *name = json_object_get_string_member(method_object, "name");
+    (*method_container)->methods[i].name = strdup(name);
+
+    JsonArray *parameters = json_object_get_array_member(method_object, "parameters");
+    guint param_len = json_array_get_length(parameters);
+    (*method_container)->methods[i].param_count = param_len;
+    
+    (*method_container)->methods[i].parameters = malloc(param_len * sizeof(Parameter));
+
+    if ((*method_container)->methods[i].parameters == NULL) 
+    {
+      perror("failed to alloc memory for parameters");
+      return;
+    }
+
+    for (guint j = 0; j < param_len; j++) 
+    {
+      JsonObject *paramObj = json_array_get_object_element(parameters, j);
+      const char *param_name = json_object_get_string_member(paramObj, "name");
+      const char *param_value = json_object_get_string_member(paramObj, "value");
+
+      (*method_container)->methods[i].parameters[j].name = strdup(param_name);
+      (*method_container)->methods[i].parameters[j].value = strdup(param_value);
+    }
+  }
+
+  g_object_unref(parser);
+} 
+
+//finds method in json and writes its params to it.
+void write_params_json(Method *method) 
+{
+  JsonParser *parser = json_parser_new();
+  GError *file_error = NULL;
+
+  json_parser_load_from_file (parser, "config.json", &file_error);
+  if(file_error)
+  {
+    alert_popup("Error while parsing json", file_error->message);
+
+    g_error_free(file_error);
+    return;
+  }
+
+  JsonNode *root = json_parser_get_root(parser);
+  JsonObject *root_object = json_node_get_object(root);
+  
+  JsonArray *methods_array = json_object_get_array_member(root_object, "methods");
+  size_t methods_length = json_array_get_length(methods_array);
+
+  for (size_t i = 0; i < methods_length; i++) 
+  {
+    JsonObject *method_object = json_array_get_object_element(methods_array, i);
+    const gchar *existing_method_name = json_object_get_string_member(method_object, "name");
+
+    if (g_strcmp0(existing_method_name, method->name) == 0) 
+    {
+      JsonArray *parameters_array = json_object_get_array_member(method_object, "parameters");
+      size_t params_length = json_array_get_length(parameters_array);
+      
+      //remove old params
+      for (size_t j = params_length; j > 0; j--) 
+      {
+        //this is so stupid, i dont even want to look at this again
+        //todo invetigate this further, theres no ways this is how it works.
+        json_array_remove_element(parameters_array, j - 1);
+        params_length = json_array_get_length(parameters_array);
+      }
+
+      //insert new params
+      for (size_t k = 0; k < method->param_count; k++) 
+      {
+        JsonObject *param_object = json_object_new();
+        json_object_set_string_member(param_object, "name", method->parameters[k].name);
+        json_object_set_string_member(param_object, "value", method->parameters[k].value);
+        json_array_add_object_element(parameters_array, param_object);
+      }
+
+      break;
+    }
+  }
+
+  //JsonNode *root_node = json_node_new_from_object(root_object);
+  JsonGenerator *generator = json_generator_new();
+  json_generator_set_root(generator, root);
+  json_generator_to_file(generator, "config.json", NULL);
+  
+  g_object_unref(generator);
+  g_object_unref(parser);
 }
