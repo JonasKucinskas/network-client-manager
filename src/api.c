@@ -93,19 +93,9 @@ void api_call(struct MemoryStruct *chunk, Method *method)
     if(res != CURLE_OK)
     {
       alert_popup("API request failed", curl_easy_strerror(res));
-
-      
+      curl_easy_cleanup(curl);
     }
 
-    int response_code;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-      
-    if (response_code != 200)
-    {
-      alert_popup("", "Http error");
-    }
-
-    curl_easy_cleanup(curl);
     curl_global_cleanup();
   }
 }
