@@ -16,7 +16,6 @@ void alert_popup(const char *header, const char *body)
     gtk_widget_destroy(msg);
 }
 
-//even if initial parameters were loaded, this should work fine.
 static void on_submit(GtkButton *button, gpointer user_data) 
 {
     GtkWidget *vbox = GTK_WIDGET(user_data);
@@ -25,18 +24,46 @@ static void on_submit(GtkButton *button, gpointer user_data)
     {
         ParameterWidgets *row = (ParameterWidgets *)node->data;
 
-        //TODO check if values already exist in method parameters, but its fine for now
-        const gchar *name = gtk_entry_get_text(GTK_ENTRY(row->name)); 
-        const gchar *value = gtk_entry_get_text(GTK_ENTRY(row->value)); 
+        const gchar *param_name = gtk_entry_get_text(GTK_ENTRY(row->name)); 
+        const gchar *param_value = gtk_entry_get_text(GTK_ENTRY(row->value)); 
 
+        //remove param
+        if (param_name[0] == '\0' || param_value[0] == '\0')//empty, non null string
+        {
+            gint i = g_list_index(parameter_rows, node->data);
 
-        //TODO if params get deleted in ui, this does not delete them from memory.
-        //empty, non null string
-        if (name[0] == '\0' || value[0] == '\0')
+            if (i <= selected_method->param_count - 1)
+            {
+                free(selected_method->parameters[i].name);
+                free(selected_method->parameters[i].value);
+
+                selected_method->parameters[i] = selected_method->parameters[selected_method->param_count - 1];
+                selected_method->parameters = realloc(selected_method->parameters, (selected_method->param_count - 1) * sizeof(Parameter));
+                selected_method->param_count -= 1;
+            }
+
+            continue;
+        }
+
+        //edit param
+        gboolean param_edited = FALSE;
+        
+        for(size_t i = 0; i < selected_method->param_count; i++)
+        {
+            if (g_strcmp0(param_name, selected_method->parameters[i].name) == 0)
+            {
+                selected_method->parameters[i].value = strdup(param_value);
+                param_edited = TRUE;
+                break;
+            }
+        }
+
+        if (param_edited)
         {
             continue;
         }
 
+        //add param:
         selected_method->parameters = realloc(selected_method->parameters, (selected_method->param_count + 1) * sizeof(Parameter));
 
         if (selected_method->parameters == NULL) 
@@ -47,8 +74,8 @@ static void on_submit(GtkButton *button, gpointer user_data)
 
         Parameter *param = &selected_method->parameters[selected_method->param_count];
 
-        param->name = strdup(name); 
-        param->value = strdup(value);
+        param->name = strdup(param_name); 
+        param->value = strdup(param_value);
         selected_method->param_count++;
     }
 
@@ -58,8 +85,6 @@ static void on_submit(GtkButton *button, gpointer user_data)
     //this will prevent param dublication.
     g_list_free_full(parameter_rows, g_free);
     parameter_rows = NULL;
-
-    //TODO free selected method on dialog close, buts its fine actualy.
 }
 
 static void on_method_selected(GtkComboBox *combo, gpointer user_data) 
@@ -119,6 +144,11 @@ static void draw_initial_parameters(GtkWidget *vbox, int method_index)
         GtkWidget *name_entry = gtk_entry_new_with_buffer(param_name_buffer);
         GtkWidget *value_label = gtk_label_new("Value:");
         GtkWidget *value_entry = gtk_entry_new_with_buffer(param_value_buffer);
+
+        ParameterWidgets *new_row = g_new(ParameterWidgets, 1);
+        new_row->name = name_entry;
+        new_row->value = value_entry;
+        parameter_rows = g_list_append(parameter_rows, new_row);
 
         gtk_box_pack_start(GTK_BOX(hbox), name_label, FALSE, FALSE, 5);
         gtk_box_pack_start(GTK_BOX(hbox), name_entry, FALSE, FALSE, 5);

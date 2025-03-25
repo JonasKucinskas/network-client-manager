@@ -326,6 +326,8 @@ void write_params_json(Method *method)
 
   //JsonNode *root_node = json_node_new_from_object(root_object);
   JsonGenerator *generator = json_generator_new();
+  json_generator_set_pretty(generator, TRUE);
+
   json_generator_set_root(generator, root);
   json_generator_to_file(generator, "config.json", NULL);
   

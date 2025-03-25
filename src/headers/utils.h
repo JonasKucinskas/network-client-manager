@@ -41,5 +41,4 @@ void make_post_data_from_object(char *str, Method *method);
 void read_json(MethodContainer **method_container);
 void write_params_json(Method *method);
 
-
 #endif
