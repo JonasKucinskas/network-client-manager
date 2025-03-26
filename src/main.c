@@ -6,6 +6,7 @@
 
 gint client_page;
 gint wan_page;
+gboolean wan_page_drawn = FALSE;
 
 static guint client_update_id = 0;
 
@@ -21,12 +22,17 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page, guint page_
     else if (page_num == wan_page) 
     {
         //remove the timeout
-        if (client_update_id != 0) {
+        if (client_update_id != 0)
+        {
             g_source_remove(client_update_id);
             client_update_id = 0;
         }
-
-        draw_tree_view();
+        
+        if (!wan_page_drawn) 
+        {
+            draw_tree_view();  
+            wan_page_drawn = TRUE;
+        }
     }
 }
 

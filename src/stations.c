@@ -2,6 +2,8 @@
 #include <stdbool.h>
 
 #define BUFSIZE 36
+#define CMD_LENGTH_DC_CLIENT 47
+#define CMD_LENGTH_STATIONS_GET 43
 
 GtkWidget *client_grid;
 int client_count = 0;
@@ -12,7 +14,7 @@ GtkWidget **dc_buttons = NULL;
 
 static void dc_client(GtkButton *button, gchar *mac) 
 {
-  char cmd[47] = "sudo iw dev wlan0 station del ";
+  char cmd[CMD_LENGTH_DC_CLIENT] = "sudo iw dev wlan0 station del ";
   strcat(cmd, mac);
   
   FILE *fp = popen(cmd, "r");
@@ -71,7 +73,7 @@ static void create_widgets(int i)
 static void update_buffer(int i) 
 {
   char cmd[] = "iw dev wlan0 station get ";
-  char cmd_full[43] = {0};
+  char cmd_full[CMD_LENGTH_STATIONS_GET] = {0};
   
   snprintf(cmd_full, sizeof(cmd_full), "%s%s", cmd, macs[i]);
   

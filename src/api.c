@@ -5,47 +5,70 @@
 #include "headers/widgets.h"
 
 #define BASE_URL "https://192.168.50.1/api/"
+#define BASE_URL_LENGTH 34
 
-gboolean api_save_auth_cookie()
+gboolean api_save_auth_cookie(const char *username, const char *password)
 {
   CURL *curl;
   CURLcode res;
- 
-  const char *post_data = "username=admin&password=Admin12345";
-
+    
   curl_global_init(CURL_GLOBAL_DEFAULT);
  
   curl = curl_easy_init();
 
-  if(curl) 
+  if(curl == NULL) 
   {
-    char url[34] = BASE_URL;
-    strcat(url, "login");//api/login call
-
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(post_data));
-    curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    
-    //write cookie to "cookies" file
-    curl_easy_setopt(curl, CURLOPT_COOKIEJAR, "cookies");
-
-    res = curl_easy_perform(curl);
-
-    if(res != CURLE_OK)
-    {
-      g_print("curl_easy_perform() failed: %s\n",
-      curl_easy_strerror(res));
-      curl_easy_cleanup(curl);
-      curl_global_cleanup();
-      return FALSE;
-    }
-
-    curl_easy_cleanup(curl);
+    g_print("failed to init curl");
+    return FALSE;
   }
- 
+
+  char *url = malloc(strlen(base_url) + strlen("login") + 1);
+
+  if (url == NULL) 
+  {
+    g_print("failed to alloc url");
+    return FALSE;
+  }
+  url[0] = '\0';
+  strcat(url, base_url);
+  strcat(url, "login");
+
+  size_t post_data_length = strlen("username=") + strlen(username) + strlen("&password=") + strlen(password) + 1;
+  char *post_data = malloc(post_data_length);
+
+  if (post_data == NULL) 
+  {
+    g_print("failed to alloc post data");
+    return FALSE;
+  }
+
+  post_data[0] = '\0';
+  snprintf(post_data, post_data_length, "username=%s&password=%s", username, password);
+
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(post_data));
+  curl_easy_setopt(curl, CURLOPT_POST, 1L);
+  
+  //write cookie to "cookies" file
+  curl_easy_setopt(curl, CURLOPT_COOKIEJAR, "cookies");
+  res = curl_easy_perform(curl);
+
+  if(res != CURLE_OK)
+  {
+    g_print("curl_easy_perform() failed: %s\n",
+    curl_easy_strerror(res));
+    curl_easy_cleanup(curl);
+    curl_global_cleanup();
+    return FALSE;
+  }
+  
+  free(url);
+  free(post_data);
+  curl_easy_cleanup(curl);
   curl_global_cleanup();
+
   return TRUE;
 }
 
@@ -60,7 +83,7 @@ void api_call(struct MemoryStruct *chunk, Method *method)
   
   if(curl) 
   {
-    char url[34] = BASE_URL;
+    char url[BASE_URL_LENGTH] = BASE_URL;
     strcat(url, method->name);
 
     curl_easy_setopt(curl, CURLOPT_URL, url);

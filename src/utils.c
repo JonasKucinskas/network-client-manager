@@ -9,6 +9,10 @@
 #include "headers/api.h"
 #include "headers/wan.h"
 
+gchar *username = NULL;
+gchar *password = NULL;
+gchar *base_url = NULL;
+
 size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
   size_t realsize = size * nmemb;
@@ -114,7 +118,13 @@ static gchar* json_get_string(JsonNode *root, const char* json_path)
   json_node_get_value(arrayElement, &gvalue);
   gchar *strVal = g_strdup_value_contents(&gvalue);
 
-  return strVal;
+  //remove \" from string
+  gchar *cleanedStr = g_strndup(strVal + 1, strlen(strVal) - 2);
+
+  g_value_unset(&gvalue);
+  g_free(strVal);
+
+  return cleanedStr;
 }
 
 static int json_get_int(JsonNode *root, const char* json_path)
@@ -132,20 +142,16 @@ static int json_get_int(JsonNode *root, const char* json_path)
 }
 
 //returns code embedded in api return
-int json_error_parse(JsonNode *root)
+int get_json_return_code(JsonNode *root)
 {
   gchar *status = json_get_string(root, "$.stat");
-  int code;
+  int code = 200;
 
-  if(strcmp(status, "\"fail\"") == 0)
+  if(strcmp(status, "fail") == 0)
   {
     code = json_get_int(root, "$.code");
   }
-  else 
-  {
-    code = 200;
-  }
-  
+
   //if stat == 'ok', json just does not return a code?
   g_free(status);
   return code;
@@ -168,7 +174,7 @@ void handle_json_error(int error_code, int row_index)
   if(error_code == 401)//unauthorized
   {
     //writes new cookie if current cookie is wrong or does not exist
-    gboolean saved_cookie = api_save_auth_cookie();
+    gboolean saved_cookie = api_save_auth_cookie(username, password);
  
     if (saved_cookie == FALSE)
     {
@@ -212,7 +218,7 @@ void make_post_data_from_object(char *str, Method *method)
   }
 }
 
-void read_json(MethodContainer **method_container)
+void parse_json_into_memory(MethodContainer **method_container)
 {
   *method_container = malloc(sizeof(MethodContainer));
 
@@ -226,8 +232,14 @@ void read_json(MethodContainer **method_container)
     g_object_unref(parser);
     return;
   }
-  
-  JsonObject *object = json_node_get_object(json_parser_get_root(parser));
+
+  JsonNode *root = json_parser_get_root(parser);
+
+  username = json_get_string(root, "$.username");
+  password = json_get_string(root, "$.password");
+  base_url = json_get_string(root, "$.url");
+
+  JsonObject *object = json_node_get_object(root);
   JsonArray *methods_member = json_object_get_array_member(object, "methods");
   guint method_count = json_array_get_length(methods_member);
 
