@@ -60,7 +60,7 @@ static void on_submit(GtkButton *button, gpointer user_data)
     GtkWidget *vbox = GTK_WIDGET(user_data);
     Method *selected_method = &method_container->methods[selected_method_index];
 
-    for (GList *node = parameter_rows; node != NULL; node = node->next) 
+    for (GList *node = parameter_rows; node != NULL;) 
     {
         ParameterWidgets *row = (ParameterWidgets *)node->data;
 
@@ -75,10 +75,11 @@ static void on_submit(GtkButton *button, gpointer user_data)
             //empty param's index in ui is less than param count, meaning user deleted that param.
             if (i <= selected_method->param_count - 1)
             {
+                //free deleted param
                 free(selected_method->parameters[i].name);
                 free(selected_method->parameters[i].value);
 
-                //free deleted param and swap it with last parameter, then realloc.
+                //swap deleted param with last parameter, then realloc.
                 selected_method->parameters[i] = selected_method->parameters[selected_method->param_count - 1];
                 selected_method->parameters = realloc(selected_method->parameters, (selected_method->param_count - 1) * sizeof(Parameter));
                 selected_method->param_count -= 1;
@@ -89,15 +90,16 @@ static void on_submit(GtkButton *button, gpointer user_data)
             GtkWidget *hbox = (GtkWidget *)i_th_param_widget->data;
             gtk_widget_destroy(hbox);
             parameter_widgets = g_list_delete_link (parameter_widgets, i_th_param_widget);
-            
-            //remove text values from memory
-            parameter_rows = g_list_delete_link(parameter_rows, node);
 
+            //remove param row.            
+            GList *next_node = node->next;  
+            parameter_rows = g_list_delete_link(parameter_rows, node);
+            
+            node = next_node;
             continue;
         }
 
         //edit param
-
         if (i <= selected_method->param_count - 1)
         {
             gboolean name_edited = g_strcmp0(param_name, selected_method->parameters[i].name) != 0;
@@ -107,11 +109,13 @@ static void on_submit(GtkButton *button, gpointer user_data)
             {
                 selected_method->parameters[i].name = strdup(param_name);
                 selected_method->parameters[i].value = strdup(param_value);
+                
+                node = node->next;
                 continue;
             }
         }
 
-        //index bigger than param count, add parameters.
+        //index bigger than param count, add parameter.
         if (i > selected_method->param_count - 1)
         {
             //add param:
@@ -126,7 +130,11 @@ static void on_submit(GtkButton *button, gpointer user_data)
             selected_method->parameters[i].name = strdup(param_name);
             selected_method->parameters[i].value = strdup(param_value);
             selected_method->param_count++;
+
+            node = node->next;
+            continue;
         }
+        node = node->next;
     }
 
     write_params_json(selected_method); 
@@ -218,8 +226,10 @@ void show_parameter_dialog(int method_index)
     draw_initial_parameters(vbox);
     gtk_widget_show_all(dialog);
 
-    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) 
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT || gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_CANCEL) 
     {
+        //todo if user click in x and closes window that way, this does not get called.
+
         //if user submits params and then decides to add more and submits again,
         //this will prevent param dublication.
         g_list_free_full(parameter_rows, g_free);
