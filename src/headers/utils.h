@@ -4,6 +4,8 @@
 
 #define UTILS_H
 
+extern gchar *base_url;
+
 struct MemoryStruct 
 {
   char *memory;
@@ -33,13 +35,12 @@ typedef struct {
 
 size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
 void json_tree_draw(JsonNode *node, GtkTreeStore *treestore, GtkTreeIter *iter);
-int json_error_parse(JsonNode *root);
+int get_json_return_code(JsonNode *root);
 void toggle_row_expansion(GtkTreeView *tree_view, GtkTreePath *path, gboolean expand, gboolean expand_all);
 gchar* json_get_value(JsonNode *root, const char* json_path);
 void handle_json_error(int error_code, int row_index);
 void make_post_data_from_object(char *str, Method *method);
-void read_json(MethodContainer **method_container);
+void parse_json_into_memory(MethodContainer **method_container);
 void write_params_json(Method *method);
-
 
 #endif

@@ -112,8 +112,8 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   g_print("Row activated: %s\n", selected_method->name);
 
   JsonParser *parser = json_parser_new();
-  GError *error = NULL;
 
+  GError *error = NULL;
 
   struct MemoryStruct chunk;
   chunk.memory = malloc(1);  
@@ -142,10 +142,9 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   }
 
   JsonNode *root = json_parser_get_root(parser);
-  
   //api returns code 200 always, so I have to parse json for actual error messages :(((
-  int json_code = json_error_parse(root);
-  
+  int json_code = get_json_return_code(root);
+
   if(json_code != 200)
   {
     handle_json_error(json_code, row_index);
@@ -164,7 +163,7 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
 
 void draw_tree_view()
 {
-  read_json(&method_container);
+  parse_json_into_memory(&method_container);
   //set wan_view and model;
   g_signal_connect(wan_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
   create_model(wan_view);
