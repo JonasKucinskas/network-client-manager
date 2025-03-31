@@ -91,6 +91,7 @@ static void on_submit(GtkButton *button, gpointer user_data)
             gtk_widget_destroy(hbox);
             parameter_widgets = g_list_delete_link (parameter_widgets, i_th_param_widget);
 
+
             //remove param row.            
             GList *next_node = node->next;  
             parameter_rows = g_list_delete_link(parameter_rows, node);
@@ -140,14 +141,36 @@ static void on_submit(GtkButton *button, gpointer user_data)
     write_params_json(selected_method); 
 }
 
+static void clear_param_data(gpointer user_data)
+{
+    //if user submits params and then decides to add more and submits again,
+    //this will prevent param dublication.
+    g_list_free_full(parameter_rows, g_free);
+    parameter_rows = NULL;
+    
+    //free list, but keep widgets loaded (they get deleted when window gets closed):
+    g_list_free(parameter_widgets);
+    parameter_widgets = NULL;
+}
+
 static void on_method_selected(GtkComboBox *combo, gpointer user_data) 
 {
+    for (GList *node = parameter_widgets; node != NULL; ) 
+    {
+        GtkWidget *hbox = (GtkWidget *)node->data;
+        gtk_widget_destroy(hbox); 
+        GList *next_node = node->next;
+        parameter_widgets = g_list_delete_link(parameter_widgets, node);
+        node = next_node; 
+    }
+    clear_param_data(NULL);
+
     //in case user changed selected method in combo box.
     selected_method_index = gtk_combo_box_get_active(combo);
     if (selected_method_index == -1) return;
 
-    GtkWidget *dialog = GTK_WIDGET(user_data);
-    gtk_widget_show_all(dialog);
+    GtkWidget *vbox = GTK_WIDGET(user_data);
+    draw_initial_parameters(vbox);
 }
 
 static void on_add_parameter(GtkButton *button, gpointer user_data) 
@@ -179,21 +202,11 @@ static void on_add_parameter(GtkButton *button, gpointer user_data)
     gtk_widget_show_all(vbox);
 }
 
-void show_parameter_dialog(int method_index) 
+static GtkWidget* draw_param_dialog_content(int method_index)
 {
     selected_method_index = method_index;
 
-    GtkWidget *dialog = gtk_dialog_new_with_buttons ("Select API Method",
-                                         NULL,
-                                         GTK_DIALOG_MODAL,
-                                         "_Cancel", GTK_RESPONSE_CANCEL,
-                                         "_OK", GTK_RESPONSE_ACCEPT,
-                                         NULL);
-
-    //g_signal_connect(dialog, "response", G_CALLBACK(on_dialog_response), vbox);
-
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), vbox);
 
     GtkWidget *label = gtk_label_new("Select an API method:");
     gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 5);
@@ -210,7 +223,7 @@ void show_parameter_dialog(int method_index)
     gtk_combo_box_set_active(GTK_COMBO_BOX(combo_box), method_index);
     gtk_box_pack_start(GTK_BOX(hbox_combo_button), combo_box, TRUE, TRUE, 5);
 
-    g_signal_connect(combo_box, "changed", G_CALLBACK(on_method_selected), dialog);
+    g_signal_connect(combo_box, "changed", G_CALLBACK(on_method_selected), vbox);
 
     GtkWidget *add_button = gtk_button_new_with_label("Add Parameter");
     g_signal_connect(add_button, "clicked", G_CALLBACK(on_add_parameter), vbox);
@@ -222,23 +235,66 @@ void show_parameter_dialog(int method_index)
     g_signal_connect(submit_button, "clicked", G_CALLBACK(on_submit), vbox);
     gtk_box_pack_start(GTK_BOX(vbox), submit_button, FALSE, FALSE, 5);
 
-
     draw_initial_parameters(vbox);
+    return vbox;
+}
+
+void show_parameter_dialog(int method_index) 
+{
+    GtkWidget *dialog = gtk_dialog_new_with_buttons ("Select API Method",
+                                         NULL,
+                                         GTK_DIALOG_MODAL,
+                                         "_Cancel", GTK_RESPONSE_CANCEL,
+                                         "_OK", GTK_RESPONSE_ACCEPT,
+                                         NULL);
+
+    g_signal_connect(dialog, "response", G_CALLBACK(clear_param_data), NULL);
+
+    GtkWidget* vbox = draw_param_dialog_content(method_index);
+    gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), vbox);
+
     gtk_widget_show_all(dialog);
 
-    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT || gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_CANCEL) 
-    {
-        //todo if user click in x and closes window that way, this does not get called.
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    clear_param_data(NULL);
 
-        //if user submits params and then decides to add more and submits again,
-        //this will prevent param dublication.
-        g_list_free_full(parameter_rows, g_free);
-        parameter_rows = NULL;
-    
-        //free list, but keep widgets loaded (they get deleted when window gets closed):
-        g_list_free(parameter_widgets);
-        parameter_widgets = NULL;
-    }
+    gtk_widget_destroy(dialog);
+}
+
+void open_menu_window()
+{
+    GtkWidget *stack = gtk_stack_new ();
+
+    GtkWidget *param_page = draw_param_dialog_content(0);
+    GtkWidget *method_page = gtk_label_new ("Method page");
+    GtkWidget *user_page = gtk_label_new ("User page");
+
+    gtk_stack_add_titled(GTK_STACK(stack), method_page, "method_page", "Methods");
+    gtk_stack_add_titled(GTK_STACK(stack), param_page, "param_page", "Parameters");
+    gtk_stack_add_titled(GTK_STACK(stack), user_page, "user_page", "User");
+
+
+    GtkWidget *stack_sidebar = gtk_stack_sidebar_new();
+    gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(stack_sidebar), GTK_STACK(stack));
+
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("Settings",
+                                                   NULL,
+                                                   GTK_DIALOG_MODAL,
+                                                   "_Cancel", GTK_RESPONSE_CANCEL,
+                                                   "_OK", GTK_RESPONSE_ACCEPT,
+                                                   NULL);
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+
+    gtk_box_pack_start(GTK_BOX(box), stack_sidebar, FALSE, FALSE, 0); 
+    gtk_box_pack_start(GTK_BOX(box), stack, TRUE, TRUE, 0); 
+
+    gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), box);
+
+    gtk_widget_show_all(dialog);
+
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    clear_param_data(NULL);
 
     gtk_widget_destroy(dialog);
 }

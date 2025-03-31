@@ -161,10 +161,10 @@ void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColu
   g_object_unref(parser);
 }
 
-void draw_tree_view()
+void init_wan_page()
 {
   parse_json_into_memory(&method_container);
-  //set wan_view and model;
+ 
   g_signal_connect(wan_view, "row-activated", G_CALLBACK(on_row_activated), NULL);
   create_model(wan_view);
   gtk_widget_show_all(wan_view);

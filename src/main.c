@@ -1,6 +1,7 @@
 #include <gtk/gtk.h>
 #include "headers/stations.h" 
 #include "headers/wan.h" 
+#include "headers/widgets.h"
 
 #define UPDATE_RATE 1000
 
@@ -33,7 +34,7 @@ static void on_page_switched(GtkNotebook *notebook, GtkWidget *page, guint page_
         
         if (!wan_page_drawn) 
         {
-            draw_tree_view();  
+            init_wan_page();  
             wan_page_drawn = TRUE;
         }
     }
@@ -51,11 +52,21 @@ void activate(GtkApplication *app, gpointer user_data)
   client_grid = gtk_grid_new();
   wan_view = gtk_tree_view_new ();
 
+  GtkWidget *wan_page_main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  GtkWidget *menu_button = gtk_button_new_with_label("Menu");
+  g_signal_connect(menu_button, "clicked", G_CALLBACK(open_menu_window), NULL);
+
+  gtk_box_pack_start(GTK_BOX(wan_page_main_box), menu_button, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(wan_page_main_box), wan_view, FALSE, FALSE, 0);
+
+
   GtkWidget *notebook = gtk_notebook_new();
   client_page = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), GTK_WIDGET(client_grid), gtk_label_new("Clients"));
-  wan_page = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), GTK_WIDGET(wan_view), gtk_label_new("Wan"));
+  wan_page = gtk_notebook_append_page(GTK_NOTEBOOK(notebook), GTK_WIDGET(wan_page_main_box), gtk_label_new("Wan"));
+
 
   g_signal_connect(notebook, "switch-page", G_CALLBACK(on_page_switched), NULL);
+
 
   GtkWidget *scroll_window = gtk_scrolled_window_new(NULL, NULL);
   gtk_container_add(GTK_CONTAINER(window), scroll_window);

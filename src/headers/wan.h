@@ -6,6 +6,6 @@
 extern GtkWidget *wan_view;
 extern MethodContainer *method_container;
 
-void draw_tree_view();
+void init_wan_page();
 
 #endif
