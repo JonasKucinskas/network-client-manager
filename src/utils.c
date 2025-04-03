@@ -291,7 +291,7 @@ void write_params_json(Method *method)
     JsonParser *parser = json_parser_new();
     GError *file_error = NULL;
 
-    json_parser_load_from_file (parser, "config.json", &file_error);
+    json_parser_load_from_file(parser, "config.json", &file_error);
     if(file_error)
     {
         alert_popup("Error while parsing json", file_error->message);
@@ -337,6 +337,36 @@ void write_params_json(Method *method)
     }
 
     //JsonNode *root_node = json_node_new_from_object(root_object);
+    JsonGenerator *generator = json_generator_new();
+    json_generator_set_pretty(generator, TRUE);
+
+    json_generator_set_root(generator, root);
+    json_generator_to_file(generator, "config.json", NULL);
+    
+    g_object_unref(generator);
+    g_object_unref(parser);
+}
+
+void remove_method_from_json(int method_index)
+{
+    JsonParser *parser = json_parser_new();
+    GError *err = NULL;
+    
+    if (!json_parser_load_from_file(parser, "config.json", &err)) 
+    {
+        //gprint("error loading json file: %s\n", err->message);
+        g_error_free(err);
+        g_object_unref(parser);
+        return;
+    }
+
+    JsonNode *root = json_parser_get_root(parser);
+
+    JsonObject *object = json_node_get_object(root);
+    JsonArray *methods_member = json_object_get_array_member(object, "methods");
+
+    json_array_remove_element (methods_member, method_index);
+
     JsonGenerator *generator = json_generator_new();
     json_generator_set_pretty(generator, TRUE);
 

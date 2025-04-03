@@ -179,7 +179,7 @@ static void on_method_selected(GtkComboBox *combo, gpointer user_data)
 
 static void on_delete_method(GtkButton *button, gpointer user_data) 
 {
-    int method_index = GPOINTER_TO_INT(user_data);
+    char *selected_method_name = (char*)(user_data);
 
     GtkWidget *dialog = gtk_dialog_new_with_buttons ("Delete Method",
                                         NULL,
@@ -193,13 +193,38 @@ static void on_delete_method(GtkButton *button, gpointer user_data)
 
     gtk_widget_show_all(dialog);
 
-
     gint response = gtk_dialog_run(GTK_DIALOG(dialog));
 
     if (response == GTK_RESPONSE_ACCEPT)
     {
-        //todo delete method
-        Method *selected_method = &method_container->methods[method_index];
+        //delete method
+        
+        int method_index;
+        Method *selected_method;
+
+        //if user deletes a method, index'es change in memory, 
+        //so i need to find the index by name first
+        for (int i = 0; i < method_container->method_count; i++)
+        {
+            Method *method = &method_container->methods[i];
+
+            if (strcmp(method->name, selected_method_name) == 0)
+            {
+                method_index = i;
+                selected_method = method;
+
+                if (i < method_container->method_count - 1)
+                {
+                    for (int j = i + 1; j < method_container->method_count; j++)
+                    {
+                        method_container->methods[j - 1] = method_container->methods[j];
+                    }
+                }
+
+                break;
+            }
+
+        }   
 
         for (int i = 0; i < selected_method->param_count; i++)
         {   
@@ -207,11 +232,9 @@ static void on_delete_method(GtkButton *button, gpointer user_data)
             free(selected_method->parameters[i].value);
         }
         free(selected_method->parameters);
-
-        for (int i = method_index + 1; i < method_container->method_count - 1; i++)
-        {
-            method_container->methods[i - 1] = method_container->methods[i];
-        }
+        selected_method->parameters = NULL;
+        free(selected_method_name);
+        selected_method_name = NULL;
 
         method_container->methods = realloc(method_container->methods, (method_container->method_count - 1) * sizeof(Method));
         method_container->method_count -= 1;
@@ -220,7 +243,7 @@ static void on_delete_method(GtkButton *button, gpointer user_data)
         GtkListBoxRow* row_to_delete = gtk_list_box_get_row_at_index(GTK_LIST_BOX(method_list_box), method_index);
         gtk_container_remove(GTK_CONTAINER(method_list_box), GTK_WIDGET(row_to_delete));
 
-        //TODO WRITE TO JSON
+        remove_method_from_json(method_index);
     }
     else
     {
@@ -352,14 +375,17 @@ static GtkWidget* draw_methods_page_content()
     //reverse this loop to make methods display in correct order.
     for (int i = method_container->method_count - 1; i >= 0; i--)
     {
+        Method *method = &method_container->methods[i];
+        
         GtkWidget *box_row = gtk_list_box_row_new();
         GtkWidget *container_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
 
-        GtkWidget *label = gtk_label_new(method_container->methods[i].name);
+        GtkWidget *label = gtk_label_new(method->name);
         gtk_widget_set_halign(label, GTK_ALIGN_START);
         GtkWidget *delete_button = gtk_button_new_with_label("Delete");
 
-        g_signal_connect(delete_button, "clicked", G_CALLBACK(on_delete_method), GINT_TO_POINTER(i));
+        
+        g_signal_connect(delete_button, "clicked", G_CALLBACK(on_delete_method), g_strdup(method->name));
 
 
         gtk_container_add(GTK_CONTAINER(container_box), label);

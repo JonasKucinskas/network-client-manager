@@ -42,5 +42,6 @@ void handle_json_error(int error_code, int row_index);
 void make_post_data_from_object(char *str, Method *method);
 void parse_json_into_memory(MethodContainer **method_container);
 void write_params_json(Method *method);
+void remove_method_from_json(int method_index);
 
 #endif
