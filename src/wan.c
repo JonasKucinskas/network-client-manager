@@ -18,10 +18,9 @@ MethodContainer *method_container;
 
 static GtkTreeModel* create_and_fill_model(void)
 {
-    GtkTreeStore *treestore;
-    GtkTreeIter toplevel, child;
+    GtkTreeIter toplevel;
 
-    treestore = gtk_tree_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING);
+    GtkTreeStore *treestore = gtk_tree_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING);
 
     for(int i = 0; i < method_container->method_count; i++)
     {
@@ -32,7 +31,40 @@ static GtkTreeModel* create_and_fill_model(void)
     return GTK_TREE_MODEL(treestore);
 }
 
-static void create_model(GtkWidget *view)
+void remove_row_from_model(const char *name_to_remove)
+{       
+    GtkTreeIter iter; 
+    GtkTreeModel* tree_model = gtk_tree_view_get_model(GTK_TREE_VIEW(wan_view));
+
+    gtk_tree_model_get_iter_first(tree_model, &iter);
+
+    while (TRUE) 
+    {
+        gchar *method_name;
+        gtk_tree_model_get(tree_model, &iter, 0, &method_name, -1);
+
+        g_print(method_name);
+
+        if (strcmp(method_name, name_to_remove) == 0)
+        {
+            gtk_tree_store_remove(GTK_TREE_STORE(tree_model), &iter);
+            g_free(method_name);
+            return;
+        }
+        gtk_tree_model_iter_next(tree_model, &iter);
+    }
+}
+
+void add_row_to_model(const char *name_to_add)
+{       
+    GtkTreeIter iter; 
+    GtkTreeModel* tree_model = gtk_tree_view_get_model(GTK_TREE_VIEW(wan_view));
+
+    gtk_tree_store_append(GTK_TREE_STORE(tree_model), &iter, NULL);
+    gtk_tree_store_set(GTK_TREE_STORE(tree_model), &iter, COL_METHOD, name_to_add, COL_VALUE, "", -1);
+}
+
+void create_model(GtkWidget *view)
 {
     GtkTreeViewColumn *col;
     GtkCellRenderer *renderer;

@@ -5,16 +5,7 @@
   "methods" : [
     {
       "name" : "auth.client",
-      "parameters" : [
-        {
-          "name" : "jjjj",
-          "value" : "xdxx"
-        },
-        {
-          "name" : "jjjvggg",
-          "value" : "25"
-        }
-      ]
+      "parameters" : []
     },
     {
       "name" : "auth.client.token",

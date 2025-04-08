@@ -180,21 +180,21 @@ void handle_json_error(int error_code, int row_index)
         {
             alert_popup("Authorization failed", "Failed to re-authorize.");
         }
-        alert_popup("", "Authorization failed, re-authorized.");
+        alert_popup("Authorization failed", "Re-authorized.");
     }
     else if(error_code == 999)//unknown function
     {
-        alert_popup("", "This method does not exist");
+        alert_popup("Error", "This method does not exist");
     }
     else if(error_code == 404)//unsupported request
     {
-        alert_popup("", "Parameters not set for this method.");
+        alert_popup("Error", "Parameters not set for this method.");
         
         show_parameter_dialog(row_index);
     }
     else
     {
-        alert_popup("", "Unknown return code.");
+        alert_popup("Error", "Unknown return code.");
     }
 }
 
@@ -365,7 +365,68 @@ void remove_method_from_json(int method_index)
     JsonObject *object = json_node_get_object(root);
     JsonArray *methods_member = json_object_get_array_member(object, "methods");
 
-    json_array_remove_element (methods_member, method_index);
+    json_array_remove_element(methods_member, method_index);
+
+    JsonGenerator *generator = json_generator_new();
+    json_generator_set_pretty(generator, TRUE);
+
+    json_generator_set_root(generator, root);
+    json_generator_to_file(generator, "config.json", NULL);
+    
+    g_object_unref(generator);
+    g_object_unref(parser);
+}
+
+void add_method_to_memory(const char *method_name)
+{
+    method_container->methods = realloc(method_container->methods, (method_container->method_count + 1) * sizeof(Method));
+
+    if (method_container->methods == NULL)
+    {
+        g_print("Failed to allocate memory for new method.");
+        return;
+    }
+    
+    Method *new_method = &method_container->methods[method_container->method_count];
+    
+    new_method->name = method_name;
+    new_method->param_count = 0;
+    new_method->parameters = NULL;
+}
+
+void write_method_to_json(const char *method_name)
+{
+    JsonParser *parser = json_parser_new();
+    GError *err = NULL;
+    
+    if (!json_parser_load_from_file(parser, "config.json", &err)) 
+    {
+        //gprint("error loading json file: %s\n", err->message);
+        g_error_free(err);
+        g_object_unref(parser);
+        return;
+    }
+
+    JsonNode *root = json_parser_get_root(parser);
+
+    JsonObject *object = json_node_get_object(root);
+    JsonArray *methods_member = json_object_get_array_member(object, "methods");
+
+    JsonObject *method_object = json_object_new();
+    
+    JsonNode *method_name_node = json_node_new(JSON_NODE_VALUE);
+    json_node_set_string(method_name_node, method_name);
+    json_object_set_member(method_object, "name", method_name_node);
+
+    JsonArray *parameters_array = json_array_new();
+    JsonNode *parameters_node = json_node_new(JSON_NODE_ARRAY);
+    json_node_set_array(parameters_node, parameters_array);
+    json_object_set_member(method_object, "parameters", parameters_node);
+
+    JsonNode *new_method_node = json_node_new(JSON_NODE_OBJECT);
+    json_node_set_object(new_method_node, method_object);
+    json_array_add_element(methods_member, new_method_node);
+
 
     JsonGenerator *generator = json_generator_new();
     json_generator_set_pretty(generator, TRUE);

@@ -56,7 +56,7 @@ static void draw_initial_parameters(GtkWidget *vbox)
     }
 }
 
-static void on_submit(GtkButton *button, gpointer user_data) 
+static void on_parameters_submit(GtkButton *button, gpointer user_data) 
 {
     GtkWidget *vbox = GTK_WIDGET(user_data);
     Method *selected_method = &method_container->methods[selected_method_index];
@@ -101,7 +101,7 @@ static void on_submit(GtkButton *button, gpointer user_data)
         }
 
         //edit param
-        if (i <= selected_method->param_count - 1)
+        if (i + 1 <= selected_method->param_count)
         {
             gboolean name_edited = g_strcmp0(param_name, selected_method->parameters[i].name) != 0;
             gboolean value_edited = g_strcmp0(param_value, selected_method->parameters[i].value) != 0;
@@ -117,7 +117,7 @@ static void on_submit(GtkButton *button, gpointer user_data)
         }
 
         //index bigger than param count, add parameter.
-        if (i > selected_method->param_count - 1)
+        if (i + 1 > selected_method->param_count)
         {
             //add param:
             selected_method->parameters = realloc(selected_method->parameters, (selected_method->param_count + 1) * sizeof(Parameter));
@@ -195,61 +195,78 @@ static void on_delete_method(GtkButton *button, gpointer user_data)
 
     gint response = gtk_dialog_run(GTK_DIALOG(dialog));
 
-    if (response == GTK_RESPONSE_ACCEPT)
+    if (response != GTK_RESPONSE_ACCEPT)
     {
-        //delete method
-        
-        int method_index;
-        Method *selected_method;
-
-        //if user deletes a method, index'es change in memory, 
-        //so i need to find the index by name first
-        for (int i = 0; i < method_container->method_count; i++)
+        return;
+    }
+     
+    //delete method
+    
+    int method_index;
+    Method *selected_method;
+    
+    //if user deletes a method, index'es change in memory, 
+    //so i need to find the index by name first
+    for (int i = 0; i < method_container->method_count; i++)
+    {
+        Method *method = &method_container->methods[i];
+    
+        if (strcmp(method->name, selected_method_name) == 0)
         {
-            Method *method = &method_container->methods[i];
+            method_index = i;
+            selected_method = method;
 
-            if (strcmp(method->name, selected_method_name) == 0)
+            if (i < method_container->method_count - 1)
             {
-                method_index = i;
-                selected_method = method;
-
-                if (i < method_container->method_count - 1)
+                for (int j = i + 1; j < method_container->method_count; j++)
                 {
-                    for (int j = i + 1; j < method_container->method_count; j++)
-                    {
-                        method_container->methods[j - 1] = method_container->methods[j];
-                    }
+                    method_container->methods[j - 1] = method_container->methods[j];
                 }
-
-                break;
             }
-
-        }   
-
-        for (int i = 0; i < selected_method->param_count; i++)
-        {   
-            free(selected_method->parameters[i].name);
-            free(selected_method->parameters[i].value);
+    
+            break;
         }
-        free(selected_method->parameters);
-        selected_method->parameters = NULL;
-        free(selected_method_name);
-        selected_method_name = NULL;
-
-        method_container->methods = realloc(method_container->methods, (method_container->method_count - 1) * sizeof(Method));
-        method_container->method_count -= 1;
-
-        //update ui
-        GtkListBoxRow* row_to_delete = gtk_list_box_get_row_at_index(GTK_LIST_BOX(method_list_box), method_index);
-        gtk_container_remove(GTK_CONTAINER(method_list_box), GTK_WIDGET(row_to_delete));
-
-        remove_method_from_json(method_index);
+    }   
+    
+    for (int i = 0; i < selected_method->param_count; i++)
+    {   
+        free(selected_method->parameters[i].name);
+        free(selected_method->parameters[i].value);
     }
-    else
-    {
+    free(selected_method->parameters);
+    selected_method->parameters = NULL;
 
-    }
+    method_container->methods = realloc(method_container->methods, (method_container->method_count - 1) * sizeof(Method));
+    method_container->method_count -= 1;
+    
+    //update ui
+    GtkListBoxRow* row_to_delete = gtk_list_box_get_row_at_index(GTK_LIST_BOX(method_list_box), method_index);
+    gtk_container_remove(GTK_CONTAINER(method_list_box), GTK_WIDGET(row_to_delete));
+    
+    remove_row_from_model(selected_method_name);
+
+    remove_method_from_json(method_index);
+    
     gtk_widget_destroy(dialog);
+}
+
+static void draw_method_list_box_row(const char *name)
+{
+    GtkWidget *box_row = gtk_list_box_row_new();
+    GtkWidget *container_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    GtkWidget *label = gtk_label_new(name);
+    
+    gtk_widget_set_halign(label, GTK_ALIGN_START);
+    GtkWidget *delete_button = gtk_button_new_with_label("Delete");
+    
+    g_signal_connect(delete_button, "clicked", G_CALLBACK(on_delete_method), g_strdup(name));
+    
+    gtk_container_add(GTK_CONTAINER(container_box), label);
+    gtk_box_pack_end(GTK_BOX(container_box), delete_button, FALSE, FALSE, 0);
+    
+    gtk_container_add(GTK_CONTAINER(box_row), container_box);
+    gtk_list_box_prepend(GTK_LIST_BOX(method_list_box), box_row);
+    gtk_widget_show_all(method_list_box);
 }
 
 static void on_add_method(gpointer user_data)
@@ -261,7 +278,6 @@ static void on_add_method(gpointer user_data)
                                          "_OK", GTK_RESPONSE_ACCEPT,
                                          NULL);
 
-
     GtkWidget *text_entry = gtk_entry_new();
     gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), text_entry);
 
@@ -271,7 +287,12 @@ static void on_add_method(gpointer user_data)
 
     if (response == GTK_RESPONSE_ACCEPT)
     {
-        //todo add method
+        const char *method_name = gtk_entry_get_text(GTK_ENTRY(text_entry));
+        add_method_to_memory(method_name);
+        
+        draw_method_list_box_row(method_name);        
+        add_row_to_model(method_name);
+        write_method_to_json(method_name);
     }
     else
     {
@@ -340,7 +361,7 @@ static GtkWidget* draw_param_dialog_content(int method_index)
     gtk_box_pack_start(GTK_BOX(vbox), hbox_combo_button, FALSE, FALSE, 5);
 
     GtkWidget *submit_button = gtk_button_new_with_label("Submit");
-    g_signal_connect(submit_button, "clicked", G_CALLBACK(on_submit), vbox);
+    g_signal_connect(submit_button, "clicked", G_CALLBACK(on_parameters_submit), vbox);
     gtk_box_pack_start(GTK_BOX(vbox), submit_button, FALSE, FALSE, 5);
 
     draw_initial_parameters(vbox);
@@ -349,7 +370,6 @@ static GtkWidget* draw_param_dialog_content(int method_index)
 
 static GtkWidget* draw_methods_page_content()
 {
-
     //place search box and "Add" button in header hbox
     //place method_page in scrollable window
     //place header hbox and scrollable window into vbox
@@ -365,7 +385,6 @@ static GtkWidget* draw_methods_page_content()
     gtk_box_pack_end(GTK_BOX(header_hbox), add_method_button, FALSE, FALSE, 5);
 
     gtk_box_pack_start(GTK_BOX(page_vbox), header_hbox, FALSE, FALSE, 5);
-
     //
 
     GtkWidget *method_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
@@ -376,24 +395,9 @@ static GtkWidget* draw_methods_page_content()
     for (int i = method_container->method_count - 1; i >= 0; i--)
     {
         Method *method = &method_container->methods[i];
-        
-        GtkWidget *box_row = gtk_list_box_row_new();
-        GtkWidget *container_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-
-        GtkWidget *label = gtk_label_new(method->name);
-        gtk_widget_set_halign(label, GTK_ALIGN_START);
-        GtkWidget *delete_button = gtk_button_new_with_label("Delete");
-
-        
-        g_signal_connect(delete_button, "clicked", G_CALLBACK(on_delete_method), g_strdup(method->name));
-
-
-        gtk_container_add(GTK_CONTAINER(container_box), label);
-        gtk_box_pack_end(GTK_BOX(container_box), delete_button, FALSE, FALSE, 0);
-        gtk_container_add(GTK_CONTAINER(box_row), container_box);
-        gtk_list_box_prepend(GTK_LIST_BOX(method_list_box), box_row);
-    
+        draw_method_list_box_row(method->name);
     }
+
     gtk_box_pack_start(GTK_BOX(method_vbox), method_list_box, FALSE, FALSE, 5);
     
     GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
@@ -452,7 +456,7 @@ void show_parameter_dialog(int method_index)
 
 void open_menu_window()
 {
-    GtkWidget *stack = gtk_stack_new ();
+    GtkWidget *stack = gtk_stack_new();
 
     GtkWidget *param_page = draw_param_dialog_content(0);
     GtkWidget *method_page = draw_methods_page_content();
@@ -466,11 +470,11 @@ void open_menu_window()
     gtk_stack_sidebar_set_stack(GTK_STACK_SIDEBAR(stack_sidebar), GTK_STACK(stack));
 
     GtkWidget *dialog = gtk_dialog_new_with_buttons("Settings",
-                                                   NULL,
-                                                   GTK_DIALOG_MODAL,
-                                                   "_Cancel", GTK_RESPONSE_CANCEL,
-                                                   "_OK", GTK_RESPONSE_ACCEPT,
-                                                   NULL);
+                                                    NULL,
+                                                    GTK_DIALOG_MODAL,
+                                                    "_Cancel", GTK_RESPONSE_CANCEL,
+                                                    "_OK", GTK_RESPONSE_ACCEPT,
+                                                    NULL);
 
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
 
@@ -482,7 +486,7 @@ void open_menu_window()
     gtk_widget_show_all(dialog);
 
     gint response = gtk_dialog_run(GTK_DIALOG(dialog));
-    clear_param_data(NULL);
 
+    clear_param_data(NULL);
     gtk_widget_destroy(dialog);
 }
