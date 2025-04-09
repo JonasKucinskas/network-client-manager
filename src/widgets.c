@@ -177,7 +177,7 @@ static void on_method_selected(GtkComboBox *combo, gpointer user_data)
     gtk_widget_show_all(vbox);
 }
 
-static void on_delete_method(GtkButton *button, gpointer user_data) 
+static void on_remove_method(GtkButton *button, gpointer user_data) 
 {
     char *selected_method_name = (char*)(user_data);
 
@@ -200,44 +200,16 @@ static void on_delete_method(GtkButton *button, gpointer user_data)
         return;
     }
      
-    //delete method
-    
-    int method_index;
-    Method *selected_method;
-    
     //if user deletes a method, index'es change in memory, 
     //so i need to find the index by name first
-    for (int i = 0; i < method_container->method_count; i++)
+    int method_index = find_method_index(selected_method_name);
+    gboolean removed = remove_method_from_memory(method_index);
+
+    if (removed == FALSE)
     {
-        Method *method = &method_container->methods[i];
-    
-        if (strcmp(method->name, selected_method_name) == 0)
-        {
-            method_index = i;
-            selected_method = method;
-
-            if (i < method_container->method_count - 1)
-            {
-                for (int j = i + 1; j < method_container->method_count; j++)
-                {
-                    method_container->methods[j - 1] = method_container->methods[j];
-                }
-            }
-    
-            break;
-        }
-    }   
-    
-    for (int i = 0; i < selected_method->param_count; i++)
-    {   
-        free(selected_method->parameters[i].name);
-        free(selected_method->parameters[i].value);
+        g_print("failed to remove method from memory");
+        return;
     }
-    free(selected_method->parameters);
-    selected_method->parameters = NULL;
-
-    method_container->methods = realloc(method_container->methods, (method_container->method_count - 1) * sizeof(Method));
-    method_container->method_count -= 1;
     
     //update ui
     GtkListBoxRow* row_to_delete = gtk_list_box_get_row_at_index(GTK_LIST_BOX(method_list_box), method_index);
@@ -259,13 +231,13 @@ static void draw_method_list_box_row(const char *name)
     gtk_widget_set_halign(label, GTK_ALIGN_START);
     GtkWidget *delete_button = gtk_button_new_with_label("Delete");
     
-    g_signal_connect(delete_button, "clicked", G_CALLBACK(on_delete_method), g_strdup(name));
+    g_signal_connect(delete_button, "clicked", G_CALLBACK(on_remove_method), g_strdup(name));
     
     gtk_container_add(GTK_CONTAINER(container_box), label);
     gtk_box_pack_end(GTK_BOX(container_box), delete_button, FALSE, FALSE, 0);
     
     gtk_container_add(GTK_CONTAINER(box_row), container_box);
-    gtk_list_box_prepend(GTK_LIST_BOX(method_list_box), box_row);
+    gtk_list_box_insert(GTK_LIST_BOX(method_list_box), box_row, (gint)method_container->method_count);
     gtk_widget_show_all(method_list_box);
 }
 
@@ -285,19 +257,18 @@ static void on_add_method(gpointer user_data)
 
     gint response = gtk_dialog_run(GTK_DIALOG(dialog));
 
-    if (response == GTK_RESPONSE_ACCEPT)
+    if (response != GTK_RESPONSE_ACCEPT)
     {
-        const char *method_name = gtk_entry_get_text(GTK_ENTRY(text_entry));
-        add_method_to_memory(method_name);
-        
-        draw_method_list_box_row(method_name);        
-        add_row_to_model(method_name);
-        write_method_to_json(method_name);
+        return;
     }
-    else
-    {
 
-    }
+    const char *method_name = gtk_entry_get_text(GTK_ENTRY(text_entry));
+    add_method_to_memory(method_name);
+    
+    draw_method_list_box_row(method_name);        
+    add_row_to_model(method_name);
+    write_method_to_json(method_name);
+
 
     gtk_widget_destroy(dialog);
 }
@@ -391,13 +362,12 @@ static GtkWidget* draw_methods_page_content()
 
     method_list_box = gtk_list_box_new();
 
-    //reverse this loop to make methods display in correct order.
-    for (int i = method_container->method_count - 1; i >= 0; i--)
+    for (int i = 0; i < method_container->method_count; i++)
     {
         Method *method = &method_container->methods[i];
         draw_method_list_box_row(method->name);
     }
-
+    
     gtk_box_pack_start(GTK_BOX(method_vbox), method_list_box, FALSE, FALSE, 5);
     
     GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);

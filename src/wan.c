@@ -43,15 +43,18 @@ void remove_row_from_model(const char *name_to_remove)
         gchar *method_name;
         gtk_tree_model_get(tree_model, &iter, 0, &method_name, -1);
 
-        g_print(method_name);
-
         if (strcmp(method_name, name_to_remove) == 0)
         {
             gtk_tree_store_remove(GTK_TREE_STORE(tree_model), &iter);
             g_free(method_name);
             return;
         }
-        gtk_tree_model_iter_next(tree_model, &iter);
+        gboolean is_valid = gtk_tree_model_iter_next(tree_model, &iter);
+
+        if (!is_valid)
+        {
+            return;
+        }
     }
 }
 

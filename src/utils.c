@@ -387,11 +387,58 @@ void add_method_to_memory(const char *method_name)
         return;
     }
     
-    Method *new_method = &method_container->methods[method_container->method_count];
-    
+    Method *new_method;
     new_method->name = method_name;
     new_method->param_count = 0;
     new_method->parameters = NULL;
+
+    method_container->methods[method_container->method_count] = *new_method;
+    method_container->method_count++;
+}
+
+gboolean remove_method_from_memory(int method_index)
+{
+    Method *selected_method = &method_container->methods[method_index];
+
+    for (int i = 0; i < selected_method->param_count; i++)
+    {   
+        free(selected_method->parameters[i].name);
+        free(selected_method->parameters[i].value);
+    }
+    free(selected_method->parameters);
+    selected_method->parameters = NULL;
+
+    //move elements
+    for (int i = method_index + 1; i < method_container->method_count; i++)
+    {
+        method_container->methods[i - 1] = method_container->methods[i];
+    }
+
+    method_container->methods = realloc(method_container->methods, (method_container->method_count - 1) * sizeof(Method));
+    method_container->method_count -= 1;
+
+    if (method_container->methods == NULL && method_container->method_count > 0)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+int find_method_index(const char* method_name)
+{
+    for (int i = 0; i < method_container->method_count; i++)
+    {
+        Method *method = &method_container->methods[i];
+    
+        if (strcmp(method->name, method_name) == 0)
+        {
+            return i;
+        }
+    }
+
+    //this should never happen:
+    return 0;   
 }
 
 void write_method_to_json(const char *method_name)

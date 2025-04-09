@@ -45,6 +45,7 @@ void write_params_json(Method *method);
 void remove_method_from_json(int method_index);
 void add_method_to_memory(const char *method_name);
 void write_method_to_json(const char *method_name);
-
+gboolean remove_method_from_memory(int method_index);
+int find_method_index(const char* method_name);
 
 #endif
