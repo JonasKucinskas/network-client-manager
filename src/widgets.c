@@ -7,6 +7,10 @@ GList *parameter_rows = NULL;
 GtkWidget *method_list_box = NULL;
 GList *parameter_widgets = NULL;
 
+GtkWidget *username_text_entry = NULL;
+GtkWidget *password_text_entry = NULL;
+GtkWidget *base_url_text_entry = NULL;
+
 int selected_method_index = -1;
 
 void alert_popup(const char *header, const char *body)
@@ -379,25 +383,55 @@ static GtkWidget* draw_methods_page_content()
     return page_vbox;
 }
 
+static void on_user_details_submit(GtkButton *button, gpointer user_data)
+{
+    GtkBox *page_vbox = GTK_BOX(user_data);
+
+    const gchar *username_new = gtk_entry_get_text(GTK_ENTRY(username_text_entry));
+    const gchar *password_new = gtk_entry_get_text(GTK_ENTRY(password_text_entry));
+    const gchar *base_url_new = gtk_entry_get_text(GTK_ENTRY(base_url_text_entry));
+
+    g_print("Username: %s\n", username_new);
+    g_print("Password: %s\n", password_new);
+    g_print("Base URL: %s\n", base_url_new);
+}
+
 static GtkWidget* draw_user_page_content()
 {
     GtkWidget *page_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
 
 
-    GtkWidget *user_name_label = gtk_label_new ("Username:");
-    GtkWidget *user_name_text_entry = gtk_entry_new();
-    gtk_box_pack_start(GTK_BOX(page_vbox), user_name_label, FALSE, FALSE, 0); 
-    gtk_box_pack_start(GTK_BOX(page_vbox), user_name_text_entry, FALSE, FALSE, 0); 
+    GtkWidget *username_label = gtk_label_new ("Username:");
+
+    GtkEntryBuffer *username_buffer = gtk_entry_buffer_new(username, strlen(username));
+    username_text_entry = gtk_entry_new_with_buffer(username_buffer);
+
+    gtk_box_pack_start(GTK_BOX(page_vbox), username_label, FALSE, FALSE, 0); 
+    gtk_box_pack_start(GTK_BOX(page_vbox), username_text_entry, FALSE, FALSE, 0); 
+
 
     GtkWidget *password_label = gtk_label_new ("Password:");
-    GtkWidget *password_text_entry = gtk_entry_new();
+
+    GtkEntryBuffer *password_buffer = gtk_entry_buffer_new(password, strlen(password));
+    password_text_entry = gtk_entry_new_with_buffer(password_buffer);
+
     gtk_box_pack_start(GTK_BOX(page_vbox), password_label, FALSE, FALSE, 0); 
     gtk_box_pack_start(GTK_BOX(page_vbox), password_text_entry, FALSE, FALSE, 0); 
 
-    GtkWidget *url_label = gtk_label_new ("Default url:");
-    GtkWidget *url_text_entry = gtk_entry_new();
-    gtk_box_pack_start(GTK_BOX(page_vbox), url_label, FALSE, FALSE, 0); 
-    gtk_box_pack_start(GTK_BOX(page_vbox), url_text_entry, FALSE, FALSE, 0); 
+
+    GtkWidget *base_url_label = gtk_label_new ("Default url:");
+
+    GtkEntryBuffer *base_url_buffer = gtk_entry_buffer_new(base_url, strlen(base_url));
+    base_url_text_entry = gtk_entry_new_with_buffer(base_url_buffer);
+
+    gtk_box_pack_start(GTK_BOX(page_vbox), base_url_label, FALSE, FALSE, 0); 
+    gtk_box_pack_start(GTK_BOX(page_vbox), base_url_text_entry, FALSE, FALSE, 0); 
+
+
+    GtkWidget *submit_button = gtk_button_new_with_label("Submit");
+    g_signal_connect(submit_button, "clicked", G_CALLBACK(on_user_details_submit), page_vbox);
+    gtk_box_pack_start(GTK_BOX(page_vbox), submit_button, FALSE, FALSE, 5);
+
 
     return page_vbox;
 }

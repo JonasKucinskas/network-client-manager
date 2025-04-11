@@ -5,6 +5,9 @@
 #define UTILS_H
 
 extern gchar *base_url;
+extern gchar *username;
+extern gchar *password;
+
 
 struct MemoryStruct 
 {

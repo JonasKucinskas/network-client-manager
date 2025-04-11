@@ -4,9 +4,6 @@
 #include "headers/utils.h"
 #include "headers/widgets.h"
 
-#define BASE_URL "https://192.168.50.1/api/"
-#define BASE_URL_LENGTH 34
-
 gboolean api_save_auth_cookie(const char *username, const char *password)
 {
     CURL *curl;
@@ -83,10 +80,21 @@ void api_call(struct MemoryStruct *chunk, Method *method)
     
     if(curl) 
     {
-        char url[BASE_URL_LENGTH] = BASE_URL;
+        char *url = malloc(strlen(base_url) + strlen(method->name) + 1);
+
+        if (url == NULL)
+        {
+            g_print("failed to malloc to string url");
+            return;
+        }
+        url[0] = '\0';
+
+        strcat(url, base_url);
         strcat(url, method->name);
 
         curl_easy_setopt(curl, CURLOPT_URL, url);
+
+        free(url);
 
         //insecure, but its okay for now
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
