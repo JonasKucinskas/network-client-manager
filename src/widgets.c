@@ -144,7 +144,16 @@ static void on_parameters_submit(GtkButton *button, gpointer user_data)
 
     if (selected_method->param_count > 0)
     {
-        write_params_json(selected_method); 
+        gboolean wrote_json = write_params_json(selected_method); 
+
+        if (!wrote_json)
+        {
+            alert_popup("Error", "Failed to update parameters.");
+        }
+        else
+        {
+            alert_popup("Success", "Successfuly updated parameters.");
+        }
     }
 }
 
@@ -391,9 +400,21 @@ static void on_user_details_submit(GtkButton *button, gpointer user_data)
     const gchar *password_new = gtk_entry_get_text(GTK_ENTRY(password_text_entry));
     const gchar *base_url_new = gtk_entry_get_text(GTK_ENTRY(base_url_text_entry));
 
-    g_print("Username: %s\n", username_new);
-    g_print("Password: %s\n", password_new);
-    g_print("Base URL: %s\n", base_url_new);
+    username = g_strdup(username_new);
+    password = g_strdup(password_new);
+    base_url = g_strdup(base_url_new);
+
+    //write details to json
+    gboolean wrote_json = write_user_details_to_json();
+
+    if (!wrote_json)
+    {
+        alert_popup("Error", "Failed to write to config file.");
+    }
+    else
+    {
+        alert_popup("Success", "Successfuly updated user details.");
+    }
 }
 
 static GtkWidget* draw_user_page_content()

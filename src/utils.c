@@ -286,7 +286,7 @@ void parse_json_into_memory(MethodContainer **method_container)
 } 
 
 //finds method in json and writes its params to it.
-void write_params_json(Method *method)    
+gboolean write_params_json(Method *method)    
 {
     JsonParser *parser = json_parser_new();
     GError *file_error = NULL;
@@ -297,7 +297,7 @@ void write_params_json(Method *method)
         alert_popup("Error while parsing json", file_error->message);
 
         g_error_free(file_error);
-        return;
+        return FALSE;
     }
 
     JsonNode *root = json_parser_get_root(parser);
@@ -345,6 +345,8 @@ void write_params_json(Method *method)
     
     g_object_unref(generator);
     g_object_unref(parser);
+
+    return TRUE;
 }
 
 void remove_method_from_json(int method_index)
@@ -483,4 +485,43 @@ void write_method_to_json(const char *method_name)
     
     g_object_unref(generator);
     g_object_unref(parser);
+}
+
+gboolean write_user_details_to_json()
+{
+    JsonParser *parser = json_parser_new();
+    GError *file_error = NULL;
+
+    json_parser_load_from_file(parser, "config.json", &file_error);
+    if(file_error)
+    {
+        alert_popup("Error while parsing json", file_error->message);
+
+        g_error_free(file_error);
+        return FALSE;
+    }
+
+    JsonNode *root = json_parser_get_root(parser);
+    JsonObject *root_object = json_node_get_object(root);
+    
+    JsonNode *username_node = json_object_get_member(root_object, "username");
+    json_node_set_string(username_node, username);
+
+    JsonNode *password_node = json_object_get_member(root_object, "password");
+    json_node_set_string(password_node, password);
+
+    JsonNode *url_node = json_object_get_member(root_object, "url");
+    json_node_set_string(url_node, base_url);
+
+
+    //JsonNode *root_node = json_node_new_from_object(root_object);
+    JsonGenerator *generator = json_generator_new();
+    json_generator_set_pretty(generator, TRUE);
+
+    json_generator_set_root(generator, root);
+    json_generator_to_file(generator, "config.json", NULL);
+    
+    g_object_unref(generator);
+    g_object_unref(parser);
+    return TRUE;
 }

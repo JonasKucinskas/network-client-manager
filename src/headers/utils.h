@@ -44,11 +44,12 @@ gchar* json_get_value(JsonNode *root, const char* json_path);
 void handle_json_error(int error_code, int row_index);
 void make_post_data_from_object(char *str, Method *method);
 void parse_json_into_memory(MethodContainer **method_container);
-void write_params_json(Method *method);
+gboolean write_params_json(Method *method);
 void remove_method_from_json(int method_index);
 void add_method_to_memory(const char *method_name);
 void write_method_to_json(const char *method_name);
 gboolean remove_method_from_memory(int method_index);
 int find_method_index(const char* method_name);
+gboolean write_user_details_to_json();
 
 #endif
