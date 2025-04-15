@@ -78,7 +78,7 @@ static void on_parameters_submit(GtkButton *button, gpointer user_data)
         if (param_name[0] == '\0' || param_value[0] == '\0')//empty, non null string
         {
             //empty param's index in ui is less than param count, meaning user deleted that param.
-            if (i <= selected_method->param_count - 1)
+            if (i < selected_method->param_count)
             {
                 //free deleted param
                 free(selected_method->parameters[i].name);
