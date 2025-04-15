@@ -1,16 +1,11 @@
 {
-  "username" : "username",
-  "passwd" : "passwd",
-  "ip" : "http://192.168.50.1/api",
+  "username" : "admin",
+  "password" : "Admin12345",
+  "url" : "https://192.168.50.1/api/",
   "methods" : [
     {
       "name" : "auth.client",
-      "parameters" : [
-        {
-          "name" : "name",
-          "value" : "val3"
-        }
-      ]
+      "parameters" : []
     },
     {
       "name" : "auth.client.token",
@@ -50,12 +45,7 @@
     },
     {
       "name" : "cmd.config.discard",
-      "parameters" : [
-        {
-          "name" : "111",
-          "value" : "222"
-        }
-      ]
+      "parameters" : []
     },
     {
       "name" : "cmd.config.restore",

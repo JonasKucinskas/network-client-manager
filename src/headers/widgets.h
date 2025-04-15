@@ -5,5 +5,6 @@
 
 void alert_popup(const char *header, const char *body);
 void show_parameter_dialog(int row_index);
+void open_menu_window();
 
 #endif
