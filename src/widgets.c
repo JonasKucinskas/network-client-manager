@@ -235,23 +235,49 @@ static void on_remove_method(GtkButton *button, gpointer user_data)
     gtk_widget_destroy(dialog);
 }
 
+gboolean filter_func(GtkListBoxRow *row, gpointer user_data) 
+{
+    const gchar *search_text = gtk_entry_get_text(GTK_ENTRY(user_data));
+    GtkWidget *label = g_object_get_data(G_OBJECT(row), "label");
+
+    const gchar *row_text = gtk_label_get_text(GTK_LABEL(label));
+
+    gchar *row_lower = g_utf8_strdown(row_text, -1);
+    gchar *search_lower = g_utf8_strdown(search_text, -1);
+
+    gboolean visible = g_strrstr(row_lower, search_lower) != NULL;
+
+    g_free(row_lower);
+    g_free(search_lower);
+
+    return visible;
+}
+
+void on_search_changed(GtkEntry *entry, gpointer user_data) 
+{
+    gtk_list_box_invalidate_filter(GTK_LIST_BOX(method_list_box));
+}
+
 static void draw_method_list_box_row(const char *name)
 {
     GtkWidget *box_row = gtk_list_box_row_new();
     GtkWidget *container_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     GtkWidget *label = gtk_label_new(name);
-    
+
     gtk_widget_set_halign(label, GTK_ALIGN_START);
+    
     GtkWidget *delete_button = gtk_button_new_with_label("Delete");
-    
     g_signal_connect(delete_button, "clicked", G_CALLBACK(on_remove_method), g_strdup(name));
-    
+
     gtk_container_add(GTK_CONTAINER(container_box), label);
     gtk_box_pack_end(GTK_BOX(container_box), delete_button, FALSE, FALSE, 0);
-    
+
     gtk_container_add(GTK_CONTAINER(box_row), container_box);
-    gtk_list_box_insert(GTK_LIST_BOX(method_list_box), box_row, (gint)method_container->method_count);
-    gtk_widget_show_all(method_list_box);
+
+    g_object_set_data(G_OBJECT(box_row), "label", label);
+
+    gtk_list_box_insert(GTK_LIST_BOX(method_list_box), box_row, method_container->method_count);
+    gtk_widget_show_all(box_row); 
 }
 
 static void on_add_method(gpointer user_data)
@@ -359,9 +385,11 @@ static GtkWidget* draw_methods_page_content()
     //place header hbox and scrollable window into vbox
     GtkWidget *page_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
 
+
     GtkWidget *header_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
 
     GtkWidget *search_bar = gtk_search_entry_new();
+    g_signal_connect(search_bar, "changed", G_CALLBACK(on_search_changed), NULL);
     gtk_box_pack_start(GTK_BOX(header_hbox), search_bar, TRUE, TRUE, 5);
 
     GtkWidget *add_method_button = gtk_button_new_with_label("Add");
@@ -374,6 +402,10 @@ static GtkWidget* draw_methods_page_content()
     GtkWidget *method_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
 
     method_list_box = gtk_list_box_new();
+    gtk_widget_set_vexpand(method_list_box, TRUE);
+    gtk_widget_set_hexpand(method_list_box, TRUE);
+
+    gtk_list_box_set_filter_func(GTK_LIST_BOX(method_list_box), filter_func, search_bar, NULL);
 
     for (int i = 0; i < method_container->method_count; i++)
     {
