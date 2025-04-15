@@ -9,5 +9,6 @@ extern MethodContainer *method_container;
 void init_wan_page();
 void remove_row_from_model(const char *name_to_remove);
 void add_row_to_model(const char *name_to_add);
+void on_search_changed_wan(GtkEntry *entry, gpointer user_data);
 
 #endif

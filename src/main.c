@@ -52,11 +52,21 @@ void activate(GtkApplication *app, gpointer user_data)
     client_grid = gtk_grid_new();
     wan_view = gtk_tree_view_new ();
 
+
+    GtkWidget *search_bar = gtk_search_entry_new();
+    g_signal_connect(search_bar, "changed", G_CALLBACK(on_search_changed_wan), NULL);
+
     GtkWidget *wan_page_main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    GtkWidget *menu_button = gtk_button_new_with_label("Menu");
+    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+
+
+    GtkWidget *menu_button = gtk_button_new_with_label("Settings");
     g_signal_connect(menu_button, "clicked", G_CALLBACK(open_menu_window), NULL);
 
-    gtk_box_pack_start(GTK_BOX(wan_page_main_box), menu_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(header_box), search_bar, TRUE, TRUE, 5);
+    gtk_box_pack_end(GTK_BOX(header_box), menu_button, FALSE, FALSE, 0);
+
+    gtk_box_pack_start(GTK_BOX(wan_page_main_box), header_box, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(wan_page_main_box), wan_view, FALSE, FALSE, 0);
 
 

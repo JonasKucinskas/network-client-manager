@@ -6,6 +6,8 @@
 
 //init in main
 GtkWidget *wan_view;
+char *search_text;
+GtkTreeModel *filter;
 
 enum
 {
@@ -67,6 +69,34 @@ void add_row_to_model(const char *name_to_add)
     gtk_tree_store_set(GTK_TREE_STORE(tree_model), &iter, COL_METHOD, name_to_add, COL_VALUE, "", -1);
 }
 
+static gboolean filter_func(GtkTreeModel *model, GtkTreeIter *iter, gpointer data) 
+{
+    const gchar *row_name;
+    gtk_tree_model_get(model, iter, COL_METHOD, &row_name, -1);
+
+    if (search_text == NULL || *search_text == '\0')
+        return TRUE;
+
+    gchar *row_lower = g_utf8_strdown(row_name, -1);
+    gchar *search_lower = g_utf8_strdown(search_text, -1);
+
+    gboolean visible = g_strrstr(row_lower, search_lower) != NULL;
+
+    g_free(row_lower);
+    g_free(search_lower);
+
+    return visible;
+}
+
+void on_search_changed_wan(GtkEntry *entry, gpointer user_data) 
+{
+    g_free(search_text); 
+    search_text = g_strdup(gtk_entry_get_text(entry));
+
+    gtk_tree_model_filter_refilter(GTK_TREE_MODEL_FILTER(filter)); 
+}
+
+
 void create_model(GtkWidget *view)
 {
     GtkTreeViewColumn *col;
@@ -101,7 +131,11 @@ void create_model(GtkWidget *view)
 
     model = create_and_fill_model();
 
-    gtk_tree_view_set_model(GTK_TREE_VIEW(view), model);
+    filter = gtk_tree_model_filter_new(model, NULL);
+    gtk_tree_model_filter_set_visible_func(GTK_TREE_MODEL_FILTER(filter), filter_func, NULL, NULL);
+
+    gtk_tree_view_set_model(GTK_TREE_VIEW(view), filter);
+    g_object_unref(filter);
 
     g_object_unref(model); /* destroy model automatically with wan_view */
 

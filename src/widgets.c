@@ -253,7 +253,7 @@ gboolean filter_func(GtkListBoxRow *row, gpointer user_data)
     return visible;
 }
 
-void on_search_changed(GtkEntry *entry, gpointer user_data) 
+static void on_search_changed(GtkEntry *entry, gpointer user_data) 
 {
     gtk_list_box_invalidate_filter(GTK_LIST_BOX(method_list_box));
 }
@@ -413,7 +413,8 @@ static GtkWidget* draw_methods_page_content()
         draw_method_list_box_row(method->name);
     }
     
-    gtk_box_pack_start(GTK_BOX(method_vbox), method_list_box, FALSE, FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(method_vbox), method_list_box, TRUE, TRUE, 5);
+
     
     GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER(scrolled_window), method_vbox);
