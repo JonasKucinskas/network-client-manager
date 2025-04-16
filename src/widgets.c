@@ -190,19 +190,27 @@ static void on_method_selected(GtkComboBox *combo, gpointer user_data)
     gtk_widget_show_all(vbox);
 }
 
-static void on_remove_method(GtkButton *button, gpointer user_data) 
+static void on_method_delete(GtkButton *button, gpointer user_data) 
 {
     char *selected_method_name = (char*)(user_data);
 
-    GtkWidget *dialog = gtk_dialog_new_with_buttons ("Delete Method",
-                                        NULL,
-                                        GTK_DIALOG_MODAL,
-                                        "_Cancel", GTK_RESPONSE_CANCEL,
-                                        "_OK", GTK_RESPONSE_ACCEPT,
-                                        NULL);
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(
+                        "Delete Method",
+                        NULL,
+                        GTK_DIALOG_MODAL,
+                        "_Cancel", GTK_RESPONSE_CANCEL,
+                        "_OK", GTK_RESPONSE_ACCEPT,
+                        NULL);
+
+    GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(box), 10); 
 
     GtkWidget *label = gtk_label_new("Are you sure you want to delete this method?");
-    gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), label);
+    gtk_box_pack_start(GTK_BOX(box), label, TRUE, TRUE, 10);
+
+    gtk_container_add(GTK_CONTAINER(content_area), box);
 
     gtk_widget_show_all(dialog);
 
@@ -267,7 +275,7 @@ static void draw_method_list_box_row(const char *name)
     gtk_widget_set_halign(label, GTK_ALIGN_START);
     
     GtkWidget *delete_button = gtk_button_new_with_label("Delete");
-    g_signal_connect(delete_button, "clicked", G_CALLBACK(on_remove_method), g_strdup(name));
+    g_signal_connect(delete_button, "clicked", G_CALLBACK(on_method_delete), g_strdup(name));
 
     gtk_container_add(GTK_CONTAINER(container_box), label);
     gtk_box_pack_end(GTK_BOX(container_box), delete_button, FALSE, FALSE, 0);
@@ -282,17 +290,29 @@ static void draw_method_list_box_row(const char *name)
 
 static void on_add_method(gpointer user_data)
 {
-    GtkWidget *dialog = gtk_dialog_new_with_buttons ("Add method",
-                                         NULL,
-                                         GTK_DIALOG_MODAL,
-                                         "_Cancel", GTK_RESPONSE_CANCEL,
-                                         "_OK", GTK_RESPONSE_ACCEPT,
-                                         NULL);
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(
+                        "Add Method",
+                        NULL,
+                        GTK_DIALOG_MODAL,
+                        "_Cancel", GTK_RESPONSE_CANCEL,
+                        "_OK", GTK_RESPONSE_ACCEPT,
+                        NULL);
+
+    GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(box), 10);  
+
+    GtkWidget *label = gtk_label_new("Enter the name of the method:");
+    gtk_box_pack_start(GTK_BOX(box), label, FALSE, FALSE, 10);
 
     GtkWidget *text_entry = gtk_entry_new();
-    gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), text_entry);
+    gtk_box_pack_start(GTK_BOX(box), text_entry, FALSE, FALSE, 10);
+
+    gtk_container_add(GTK_CONTAINER(content_area), box);
 
     gtk_widget_show_all(dialog);
+
 
     gint response = gtk_dialog_run(GTK_DIALOG(dialog));
 
@@ -303,12 +323,17 @@ static void on_add_method(gpointer user_data)
     }
 
     const char *method_name = gtk_entry_get_text(GTK_ENTRY(text_entry));
+
+    if (method_name[0] == '\0')
+    {
+        gtk_widget_destroy(dialog);
+        return;
+    }
+
     add_method_to_memory(method_name);
-    
     draw_method_list_box_row(method_name);        
     add_row_to_model(method_name);
     write_method_to_json(method_name);
-
 
     gtk_widget_destroy(dialog);
 }
@@ -373,7 +398,7 @@ static GtkWidget* draw_param_dialog_content(int method_index)
 
     GtkWidget *submit_button = gtk_button_new_with_label("Submit");
     g_signal_connect(submit_button, "clicked", G_CALLBACK(on_parameters_submit), vbox);
-    gtk_box_pack_start(GTK_BOX(vbox), submit_button, FALSE, FALSE, 5);
+    gtk_box_pack_end(GTK_BOX(vbox), submit_button, FALSE, FALSE, 5);
 
     draw_initial_parameters(vbox);
     return vbox;
@@ -461,8 +486,11 @@ static GtkWidget* draw_user_page_content()
     GtkEntryBuffer *username_buffer = gtk_entry_buffer_new(username, strlen(username));
     username_text_entry = gtk_entry_new_with_buffer(username_buffer);
 
-    gtk_box_pack_start(GTK_BOX(page_vbox), username_label, FALSE, FALSE, 0); 
-    gtk_box_pack_start(GTK_BOX(page_vbox), username_text_entry, FALSE, FALSE, 0); 
+    GtkWidget *username_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+
+    gtk_box_pack_start(GTK_BOX(username_hbox), username_label, FALSE, FALSE, 5); 
+    gtk_box_pack_end(GTK_BOX(username_hbox), username_text_entry, TRUE, TRUE, 5); 
+    gtk_box_pack_start(GTK_BOX(page_vbox), username_hbox, FALSE, FALSE, 5);
 
 
     GtkWidget *password_label = gtk_label_new ("Password:");
@@ -470,8 +498,11 @@ static GtkWidget* draw_user_page_content()
     GtkEntryBuffer *password_buffer = gtk_entry_buffer_new(password, strlen(password));
     password_text_entry = gtk_entry_new_with_buffer(password_buffer);
 
-    gtk_box_pack_start(GTK_BOX(page_vbox), password_label, FALSE, FALSE, 0); 
-    gtk_box_pack_start(GTK_BOX(page_vbox), password_text_entry, FALSE, FALSE, 0); 
+    GtkWidget *password_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    
+    gtk_box_pack_start(GTK_BOX(password_hbox), password_label, FALSE, FALSE, 5); 
+    gtk_box_pack_end(GTK_BOX(password_hbox), password_text_entry, TRUE, TRUE, 5); 
+    gtk_box_pack_start(GTK_BOX(page_vbox), password_hbox, FALSE, FALSE, 5);
 
 
     GtkWidget *base_url_label = gtk_label_new ("Default url:");
@@ -479,8 +510,11 @@ static GtkWidget* draw_user_page_content()
     GtkEntryBuffer *base_url_buffer = gtk_entry_buffer_new(base_url, strlen(base_url));
     base_url_text_entry = gtk_entry_new_with_buffer(base_url_buffer);
 
-    gtk_box_pack_start(GTK_BOX(page_vbox), base_url_label, FALSE, FALSE, 0); 
-    gtk_box_pack_start(GTK_BOX(page_vbox), base_url_text_entry, FALSE, FALSE, 0); 
+    GtkWidget *base_url_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    
+    gtk_box_pack_start(GTK_BOX(base_url_hbox), base_url_label, FALSE, FALSE, 5); 
+    gtk_box_pack_end(GTK_BOX(base_url_hbox), base_url_text_entry, TRUE, TRUE, 5); 
+    gtk_box_pack_start(GTK_BOX(page_vbox), base_url_hbox, FALSE, FALSE, 5);
 
 
     GtkWidget *submit_button = gtk_button_new_with_label("Submit");
