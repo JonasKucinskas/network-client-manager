@@ -390,7 +390,7 @@ void add_method_to_memory(const char *method_name)
     }
     
     Method *new_method;
-    new_method->name = method_name;
+    new_method->name = g_strdup(method_name);
     new_method->param_count = 0;
     new_method->parameters = NULL;
 
