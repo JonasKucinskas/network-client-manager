@@ -61,7 +61,7 @@ void activate(GtkApplication *app, gpointer user_data)
 
 
     GtkWidget *menu_button = gtk_button_new_with_label("Settings");
-    g_signal_connect(menu_button, "clicked", G_CALLBACK(open_menu_window), NULL);
+    g_signal_connect(menu_button, "clicked", G_CALLBACK(open_settings_window), NULL);
 
     gtk_box_pack_start(GTK_BOX(header_box), search_bar, TRUE, TRUE, 5);
     gtk_box_pack_end(GTK_BOX(header_box), menu_button, FALSE, FALSE, 0);

@@ -210,6 +210,7 @@ static void on_remove_method(GtkButton *button, gpointer user_data)
 
     if (response != GTK_RESPONSE_ACCEPT)
     {
+        gtk_widget_destroy(dialog);
         return;
     }
      
@@ -229,9 +230,8 @@ static void on_remove_method(GtkButton *button, gpointer user_data)
     gtk_container_remove(GTK_CONTAINER(method_list_box), GTK_WIDGET(row_to_delete));
     
     remove_row_from_model(selected_method_name);
-
     remove_method_from_json(method_index);
-    
+
     gtk_widget_destroy(dialog);
 }
 
@@ -298,6 +298,7 @@ static void on_add_method(gpointer user_data)
 
     if (response != GTK_RESPONSE_ACCEPT)
     {
+        gtk_widget_destroy(dialog);
         return;
     }
 
@@ -512,7 +513,7 @@ void show_parameter_dialog(int method_index)
     gtk_widget_destroy(dialog);
 }
 
-void open_menu_window()
+void open_settings_window()
 {
     GtkWidget *stack = gtk_stack_new();
 
