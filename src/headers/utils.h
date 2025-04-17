@@ -42,7 +42,7 @@ int get_json_return_code(JsonNode *root);
 void toggle_row_expansion(GtkTreeView *tree_view, GtkTreePath *path, gboolean expand, gboolean expand_all);
 gchar* json_get_value(JsonNode *root, const char* json_path);
 void handle_json_error(int error_code, int row_index);
-void make_post_data_from_object(char *str, Method *method);
+void make_post_data_from_object(char **str, Method *method);
 void parse_json_into_memory(MethodContainer **method_container);
 gboolean write_params_json(Method *method);
 void remove_method_from_json(int method_index);

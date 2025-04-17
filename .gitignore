@@ -1,5 +1,5 @@
 .vscode/
 bin/stations
 bin/cookies
-bin/config.json
 bin/config-bak.json
+theme/*

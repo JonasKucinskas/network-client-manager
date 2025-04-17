@@ -343,7 +343,6 @@ static void on_add_parameter(GtkButton *button, gpointer user_data)
     GtkWidget *vbox = GTK_WIDGET(user_data);
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5); 
 
-
     GtkWidget *name_label = gtk_label_new("Name:");
     GtkWidget *name_entry = gtk_entry_new();
     GtkWidget *value_label = gtk_label_new("Value:");
@@ -380,7 +379,7 @@ static GtkWidget* draw_param_dialog_content(int method_index)
     GtkWidget *hbox_combo_button = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     GtkWidget *combo_box = gtk_combo_box_text_new();
     
-    for (int i = 0; i < method_container->method_count; i++) 
+    for (size_t i = 0; i < method_container->method_count; i++) 
     {
         gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo_box), method_container->methods[i].name);
     }
@@ -433,7 +432,7 @@ static GtkWidget* draw_methods_page_content()
 
     gtk_list_box_set_filter_func(GTK_LIST_BOX(method_list_box), filter_func, search_bar, NULL);
 
-    for (int i = 0; i < method_container->method_count; i++)
+    for (size_t i = 0; i < method_container->method_count; i++)
     {
         Method *method = &method_container->methods[i];
         draw_method_list_box_row(method->name);
@@ -453,8 +452,6 @@ static GtkWidget* draw_methods_page_content()
 
 static void on_user_details_submit(GtkButton *button, gpointer user_data)
 {
-    GtkBox *page_vbox = GTK_BOX(user_data);
-
     const gchar *username_new = gtk_entry_get_text(GTK_ENTRY(username_text_entry));
     const gchar *password_new = gtk_entry_get_text(GTK_ENTRY(password_text_entry));
     const gchar *base_url_new = gtk_entry_get_text(GTK_ENTRY(base_url_text_entry));
@@ -518,7 +515,7 @@ static GtkWidget* draw_user_page_content()
 
 
     GtkWidget *submit_button = gtk_button_new_with_label("Submit");
-    g_signal_connect(submit_button, "clicked", G_CALLBACK(on_user_details_submit), page_vbox);
+    g_signal_connect(submit_button, "clicked", G_CALLBACK(on_user_details_submit), NULL);
     gtk_box_pack_start(GTK_BOX(page_vbox), submit_button, FALSE, FALSE, 5);
 
 

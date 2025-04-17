@@ -24,7 +24,7 @@ static GtkTreeModel* create_and_fill_model(void)
 
     GtkTreeStore *treestore = gtk_tree_store_new(NUM_COLS, G_TYPE_STRING, G_TYPE_STRING);
 
-    for(int i = 0; i < method_container->method_count; i++)
+    for(size_t i = 0; i < method_container->method_count; i++)
     {
         gtk_tree_store_append(treestore, &toplevel, NULL);
         gtk_tree_store_set(treestore, &toplevel, COL_METHOD, method_container->methods[i].name, COL_VALUE, "", -1);
@@ -64,6 +64,9 @@ void add_row_to_model(const char *name_to_add)
 {       
     GtkTreeIter iter; 
     GtkTreeModel* tree_model = gtk_tree_view_get_model(GTK_TREE_VIEW(wan_view));
+    tree_model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(tree_model));
+
+
 
     gtk_tree_store_append(GTK_TREE_STORE(tree_model), &iter, NULL);
     gtk_tree_store_set(GTK_TREE_STORE(tree_model), &iter, COL_METHOD, name_to_add, COL_VALUE, "", -1);
