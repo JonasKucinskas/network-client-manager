@@ -11,6 +11,28 @@ gboolean wan_page_drawn = FALSE;
 
 static guint client_update_id = 0;
 
+void load_theme() 
+{
+    GtkCssProvider *provider = gtk_css_provider_new();
+    GdkDisplay *display = gdk_display_get_default();
+    GdkScreen *screen = gdk_display_get_default_screen(display);
+
+    GError *error = NULL;
+    gtk_css_provider_load_from_path(provider, "../theme/gtk-3.0/gtk.css", &error);
+
+    if (error) 
+    {
+        g_printerr("Error loading CSS: %s\n", error->message);
+        g_error_free(error);
+    } 
+    else 
+    {
+        gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    }
+
+    g_object_unref(provider);
+}
+
 static void on_page_switched(GtkNotebook *notebook, GtkWidget *page, guint page_num, gpointer user_data)
 {
     if (page_num == client_page) 
@@ -44,6 +66,8 @@ void activate(GtkApplication *app, gpointer user_data)
 {
     GtkWidget *window;
     
+    load_theme();
+
     window = gtk_application_window_new(app);
     
     gtk_window_set_title(GTK_WINDOW(window), "Network");
@@ -61,7 +85,7 @@ void activate(GtkApplication *app, gpointer user_data)
 
 
     GtkWidget *menu_button = gtk_button_new_with_label("Settings");
-    g_signal_connect(menu_button, "clicked", G_CALLBACK(open_menu_window), NULL);
+    g_signal_connect(menu_button, "clicked", G_CALLBACK(open_settings_window), NULL);
 
     gtk_box_pack_start(GTK_BOX(header_box), search_bar, TRUE, TRUE, 5);
     gtk_box_pack_end(GTK_BOX(header_box), menu_button, FALSE, FALSE, 0);
@@ -90,9 +114,12 @@ int main(int argc, char **argv)
     GtkApplication *app;
     int status;
     
+
     app = gtk_application_new("org.gtk.example", G_APPLICATION_DEFAULT_FLAGS);
+
+
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
-    
+
     status = g_application_run(G_APPLICATION(app), argc, argv);
     g_object_unref(app);
     

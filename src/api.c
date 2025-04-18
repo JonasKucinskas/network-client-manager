@@ -101,8 +101,8 @@ void api_call(struct MemoryStruct *chunk, Method *method)
 
         if (method->param_count > 0)
         {
-            char *post_data;
-            make_post_data_from_object(post_data, method);
+            char *post_data = NULL;
+            make_post_data_from_object(&post_data, method);
 
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
             curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(post_data));

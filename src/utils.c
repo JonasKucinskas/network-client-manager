@@ -198,22 +198,45 @@ void handle_json_error(int error_code, int row_index)
     }
 }
 
-void make_post_data_from_object(char *str, Method *method)
+void make_post_data_from_object(char **str, Method *method)
 {
-    str[0] = '\0';
-    for (int i = 0; i < method->param_count; i++)
+    size_t total_len = 1;
+    
+    *str = malloc(total_len);
+    
+    if (!*str)
+    {
+        g_print("failed to alloc to parameter string.");
+        return;
+    } 
+    (*str)[0] = '\0';
+
+    for (size_t i = 0; i < method->param_count; i++)
     {
         char *name = method->parameters[i].name;
         char *value = method->parameters[i].value;
 
-        strcat(str, name);
-        strcat(str, "=");
-        strcat(str, value);
+        size_t needed = strlen(name) + strlen(value) + 2; // '=' and '&'
 
-        //if not last param:
+        if (i + 1 < method->param_count) {
+            needed += 1; 
+        }
+
+        total_len += needed;
+        *str = realloc(*str, total_len);
+        
+        if (!*str)
+        {
+            return;
+        }
+
+        strcat(*str, name);
+        strcat(*str, "=");
+        strcat(*str, value);
+
         if (i + 1 < method->param_count)
         {
-            strcat(str, "&");
+            strcat(*str, "&");
         }
     }
 }
@@ -257,7 +280,7 @@ void parse_json_into_memory(MethodContainer **method_container)
         JsonObject *method_object = json_array_get_object_element(methods_member, i);
         
         const gchar *name = json_object_get_string_member(method_object, "name");
-        (*method_container)->methods[i].name = strdup(name);
+        (*method_container)->methods[i].name = g_strdup(name);
 
         JsonArray *parameters = json_object_get_array_member(method_object, "parameters");
         guint param_len = json_array_get_length(parameters);
@@ -277,8 +300,8 @@ void parse_json_into_memory(MethodContainer **method_container)
             const char *param_name = json_object_get_string_member(paramObj, "name");
             const char *param_value = json_object_get_string_member(paramObj, "value");
 
-            (*method_container)->methods[i].parameters[j].name = strdup(param_name);
-            (*method_container)->methods[i].parameters[j].value = strdup(param_value);
+            (*method_container)->methods[i].parameters[j].name = g_strdup(param_name);
+            (*method_container)->methods[i].parameters[j].value = g_strdup(param_value);
         }
     }
 
@@ -402,7 +425,7 @@ gboolean remove_method_from_memory(int method_index)
 {
     Method *selected_method = &method_container->methods[method_index];
 
-    for (int i = 0; i < selected_method->param_count; i++)
+    for (size_t i = 0; i < selected_method->param_count; i++)
     {   
         free(selected_method->parameters[i].name);
         free(selected_method->parameters[i].value);
@@ -411,7 +434,7 @@ gboolean remove_method_from_memory(int method_index)
     selected_method->parameters = NULL;
 
     //move elements
-    for (int i = method_index + 1; i < method_container->method_count; i++)
+    for (size_t i = method_index + 1; i < method_container->method_count; i++)
     {
         method_container->methods[i - 1] = method_container->methods[i];
     }
@@ -429,7 +452,7 @@ gboolean remove_method_from_memory(int method_index)
 
 int find_method_index(const char* method_name)
 {
-    for (int i = 0; i < method_container->method_count; i++)
+    for (size_t i = 0; i < method_container->method_count; i++)
     {
         Method *method = &method_container->methods[i];
     
