@@ -149,6 +149,8 @@ void create_model(GtkWidget *view)
 void on_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTreeViewColumn *column, gpointer user_data) 
 {
     GtkTreeModel *model = gtk_tree_view_get_model(tree_view);
+    model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(model));
+
     GtkTreeIter iter;
     
     gboolean got_iter = gtk_tree_model_get_iter(model, &iter, path);
