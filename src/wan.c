@@ -37,6 +37,7 @@ void remove_row_from_model(const char *name_to_remove)
 {       
     GtkTreeIter iter; 
     GtkTreeModel* tree_model = gtk_tree_view_get_model(GTK_TREE_VIEW(wan_view));
+    tree_model = gtk_tree_model_filter_get_model(GTK_TREE_MODEL_FILTER(tree_model));
 
     gtk_tree_model_get_iter_first(tree_model, &iter);
 
